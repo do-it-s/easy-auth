@@ -18,12 +18,4 @@ class Device extends Model
     {
         return $this->belongsTo(User::class);
     }
-
-    /**
-     * Find the user registered with the given device UUID.
-     */
-    public static function findUserByUuid(string $uuid): ?User
-    {
-        return static::where('uuid', $uuid)->first()?->user;
-    }
 }
