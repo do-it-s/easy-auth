@@ -109,7 +109,7 @@ test('an existing member can redeem a backup code to be promoted to admin', func
     expect($invitation->refresh()->isUsed())->toBeTrue();
 });
 
-test('an existing admin redeeming a backup code does not consume it', function () {
+test('an existing admin redeeming their own backup code consumes it and is sent to reissue', function () {
     $admin = User::factory()->create();
     $tenant = Tenant::factory()->create();
     attachAdmin($tenant, $admin);
@@ -123,8 +123,8 @@ test('an existing admin redeeming a backup code does not consume it', function (
 
     $response = $this->actingAs($admin)->post(route('invitations.redeem', $token));
 
-    $response->assertOk();
-    expect($invitation->refresh()->isUsed())->toBeFalse();
+    $response->assertRedirect(route('tenants.backup-code.show', $tenant));
+    expect($invitation->refresh()->isUsed())->toBeTrue();
 });
 
 test('backup codes do not appear in the invitation list', function () {

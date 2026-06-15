@@ -96,10 +96,10 @@ class Invitation extends Model
     /**
      * Determine whether the given user can redeem this invitation.
      *
-     * Normally an invitation can only be redeemed by a user who is not yet
-     * a member of the tenant. The exception is an administrator backup
-     * code, which an existing non-admin member may redeem to be promoted
-     * to administrator.
+     * A user who is not yet a member of the tenant can always redeem an
+     * invitation to join it. An existing member can redeem any invitation
+     * that does not downgrade their role (i.e. an administrator cannot
+     * redeem a member-role invitation).
      */
     public function canBeRedeemedBy(User $user): bool
     {
@@ -107,7 +107,7 @@ class Invitation extends Model
             return true;
         }
 
-        return $this->is_backup_code && ! $this->tenant->isAdministeredBy($user);
+        return ! ($this->tenant->isAdministeredBy($user) && $this->role !== Tenant::ADMIN_ROLE);
     }
 
     /**

@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Invitation;
+use App\Models\Tenant;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -33,7 +34,7 @@ class InvitationRedemptionController extends Controller
 
         if (! $invitation->canBeRedeemedBy($user)) {
             return view('invitations.show', [
-                'status' => $invitation->tenant->isAdministeredBy($user) ? 'already_admin' : 'already_member',
+                'status' => 'already_admin',
                 'invitation' => $invitation,
             ]);
         }
@@ -43,6 +44,7 @@ class InvitationRedemptionController extends Controller
             'invitation' => $invitation,
             'token' => $token,
             'alreadyMember' => $invitation->tenant->hasMember($user),
+            'isPromotion' => $invitation->role === Tenant::ADMIN_ROLE && ! $invitation->tenant->isAdministeredBy($user),
         ]);
     }
 
@@ -64,7 +66,7 @@ class InvitationRedemptionController extends Controller
 
         if (! $invitation->canBeRedeemedBy($user)) {
             return view('invitations.show', [
-                'status' => $invitation->tenant->isAdministeredBy($user) ? 'already_admin' : 'already_member',
+                'status' => 'already_admin',
                 'invitation' => $invitation,
             ]);
         }

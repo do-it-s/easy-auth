@@ -169,7 +169,7 @@ test('authenticated non member can redeem an invitation and joins the tenant', f
     expect($invitation->redeemed_by)->toBe($user->id);
 });
 
-test('a member already in the tenant sees an already member message without side effects', function () {
+test('a member can redeem a same-role invitation to refresh their membership', function () {
     $user = User::factory()->create(['name' => 'Existing Member']);
     $tenant = Tenant::factory()->create();
     attachTenantMember($tenant, $user, Tenant::MEMBER_ROLE);
@@ -181,8 +181,60 @@ test('a member already in the tenant sees an already member message without side
 
     $response = $this->actingAs($user)->post(route('invitations.redeem', $token));
 
+    $response->assertRedirect(route('home'));
+    expect($tenant->users()->wherePivot('user_id', $user->id)->first()->pivot->role)->toBe(Tenant::MEMBER_ROLE);
+    expect($invitation->refresh()->isUsed())->toBeTrue();
+});
+
+test('an admin can redeem a same-role admin invitation to refresh their membership', function () {
+    $admin = User::factory()->create(['name' => 'Existing Admin']);
+    $tenant = Tenant::factory()->create();
+    attachTenantMember($tenant, $admin, Tenant::ADMIN_ROLE);
+
+    $token = Invitation::generateToken();
+    $invitation = Invitation::factory()->for($tenant)->admin()->create(['token' => Invitation::hashToken($token)]);
+
+    $this->actingAs($admin)->get(route('invitations.show', $token))->assertOk();
+
+    $response = $this->actingAs($admin)->post(route('invitations.redeem', $token));
+
+    $response->assertRedirect(route('home'));
+    expect($tenant->users()->wherePivot('user_id', $admin->id)->first()->pivot->role)->toBe(Tenant::ADMIN_ROLE);
+    expect($invitation->refresh()->isUsed())->toBeTrue();
+});
+
+test('a member can redeem an admin invitation to be promoted to admin', function () {
+    $member = User::factory()->create(['name' => 'Existing Member']);
+    $tenant = Tenant::factory()->create();
+    attachTenantMember($tenant, $member, Tenant::MEMBER_ROLE);
+
+    $token = Invitation::generateToken();
+    $invitation = Invitation::factory()->for($tenant)->admin()->create(['token' => Invitation::hashToken($token)]);
+
+    $this->actingAs($member)->get(route('invitations.show', $token))->assertOk();
+
+    $response = $this->actingAs($member)->post(route('invitations.redeem', $token));
+
+    $response->assertRedirect(route('home'));
+    expect($tenant->users()->wherePivot('user_id', $member->id)->first()->pivot->role)->toBe(Tenant::ADMIN_ROLE);
+    expect($invitation->refresh()->isUsed())->toBeTrue();
+});
+
+test('an admin already in the tenant sees an already admin message without side effects when redeeming a member invitation', function () {
+    $admin = User::factory()->create(['name' => 'Existing Admin']);
+    $tenant = Tenant::factory()->create();
+    attachTenantMember($tenant, $admin, Tenant::ADMIN_ROLE);
+
+    $token = Invitation::generateToken();
+    $invitation = Invitation::factory()->for($tenant)->create(['token' => Invitation::hashToken($token)]);
+
+    $this->actingAs($admin)->get(route('invitations.show', $token))->assertOk();
+
+    $response = $this->actingAs($admin)->post(route('invitations.redeem', $token));
+
     $response->assertOk();
     expect($invitation->refresh()->isUsed())->toBeFalse();
+    expect($tenant->users()->wherePivot('user_id', $admin->id)->first()->pivot->role)->toBe(Tenant::ADMIN_ROLE);
 });
 
 test('an expired invitation cannot be redeemed', function () {
