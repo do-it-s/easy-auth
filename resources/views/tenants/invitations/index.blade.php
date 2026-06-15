@@ -13,13 +13,6 @@
         <div class="w-full max-w-md">
             <h1 class="mb-4 text-lg">{{ $tenant->name }} の招待一覧</h1>
 
-            <a
-                href="{{ route('tenants.invitations.create', $tenant) }}"
-                class="inline-block mb-4 px-5 py-1.5 border border-[#19140035] hover:border-[#19140035] rounded-sm text-sm leading-normal"
-            >
-                新しい招待を発行
-            </a>
-
             @forelse ($invitations as $invitation)
                 <div class="mb-2 p-3 border border-[#19140035] rounded-sm text-sm">
                     <p>
@@ -72,6 +65,20 @@
             @empty
                 <p class="text-sm">招待はまだありません。</p>
             @endforelse
+
+            <a
+                href="{{ route('tenants.invitations.create', $tenant) }}"
+                class="inline-block mb-4 px-5 py-1.5 border border-[#19140035] hover:border-[#19140035] rounded-sm text-sm leading-normal"
+            >
+                招待を追加
+            </a>
+
+            <a
+                href="{{ route('home') }}"
+                class="inline-block mt-4 px-5 py-1.5 border border-[#19140035] hover:border-[#19140035] rounded-sm text-sm leading-normal"
+            >
+                ホームへ戻る
+            </a>
         </div>
     </body>
 </html>

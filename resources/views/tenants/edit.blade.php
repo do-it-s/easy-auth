@@ -47,6 +47,13 @@
                     保存
                 </button>
             </form>
+
+            <a
+                href="{{ route('home') }}"
+                class="inline-block mt-4 px-5 py-1.5 border border-[#19140035] hover:border-[#19140035] rounded-sm text-sm leading-normal"
+            >
+                ホームへ戻る
+            </a>
         </div>
     </body>
 </html>

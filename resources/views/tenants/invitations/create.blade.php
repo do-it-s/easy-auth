@@ -10,7 +10,7 @@
     </head>
     <body class="bg-[#FDFDFC] text-[#1b1b18] flex p-6 items-center justify-center min-h-screen flex-col">
         <div class="w-full max-w-sm">
-            <h1 class="mb-4 text-lg">{{ $tenant->name }} への招待を発行</h1>
+            <h1 class="mb-4 text-lg">{{ $tenant->name }} への招待</h1>
 
             @if ($invitationUrl)
                 <div class="mb-4 p-3 border border-[#19140035] rounded-sm text-sm">
@@ -31,20 +31,7 @@
             <form method="POST" action="{{ route('tenants.invitations.store', $tenant) }}">
                 @csrf
 
-                @if ($isAdmin)
-                    <label for="role" class="block mb-1 text-sm">ロール</label>
-
-                    <select
-                        id="role"
-                        name="role"
-                        class="w-full mb-4 px-2 py-1.5 border border-[#19140035] rounded-sm text-sm"
-                    >
-                        <option value="{{ \App\Models\Tenant::MEMBER_ROLE }}">メンバー</option>
-                        <option value="{{ \App\Models\Tenant::ADMIN_ROLE }}">管理者</option>
-                    </select>
-                @else
-                    <input type="hidden" name="role" value="{{ \App\Models\Tenant::MEMBER_ROLE }}">
-                @endif
+                <input type="hidden" name="role" value="{{ \App\Models\Tenant::MEMBER_ROLE }}">
 
                 <label for="label" class="block mb-1 text-sm">メモ（任意）</label>
 
@@ -66,12 +53,31 @@
                     class="w-full mb-4 px-2 py-1.5 border border-[#19140035] rounded-sm text-sm"
                 >
 
+                @if ($isAdmin)
+                    <label class="flex items-center gap-2 mb-4 text-sm">
+                        <input
+                            type="checkbox"
+                            name="role"
+                            value="{{ \App\Models\Tenant::ADMIN_ROLE }}"
+                            @checked(old('role') === \App\Models\Tenant::ADMIN_ROLE)
+                        >
+                        管理者として招待
+                    </label>
+                @endif
+
                 <button
                     type="submit"
                     class="inline-block px-5 py-1.5 border border-[#19140035] hover:border-[#19140035] rounded-sm text-sm leading-normal"
                 >
-                    発行
+                    招待
                 </button>
+
+                <a
+                    href="{{ route('home') }}"
+                    class="inline-block mt-4 px-5 py-1.5 border border-[#19140035] hover:border-[#19140035] rounded-sm text-sm leading-normal"
+                >
+                    ホームへ戻る
+                </a>
             </form>
         </div>
     </body>
