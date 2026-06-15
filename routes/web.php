@@ -12,6 +12,8 @@ use Illuminate\Support\Facades\Route;
 
 Route::view('/', 'home')->name('home');
 
+Route::view('/device/reset', 'device.reset')->name('device.reset');
+
 Route::post('/logout', LogoutController::class)->middleware('auth')->name('logout');
 
 Route::middleware(array_filter(['guest', config('passkeys.throttle')]))->group(function () {
