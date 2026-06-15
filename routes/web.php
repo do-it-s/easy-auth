@@ -1,6 +1,8 @@
 <?php
 
+use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\Auth\LogoutController;
+use App\Http\Controllers\Auth\RegisterController;
 use App\Http\Controllers\InvitationController;
 use App\Http\Controllers\InvitationRedemptionController;
 use App\Http\Controllers\ProfileController;
@@ -15,6 +17,10 @@ Route::middleware(array_filter(['guest', config('passkeys.throttle')]))->group(f
     Route::get('/profile/create', [ProfileController::class, 'create'])->name('profile.create');
     Route::get('/profile/passkey-options', [ProfileController::class, 'passkeyOptions'])->name('profile.passkey-options');
     Route::post('/profile', [ProfileController::class, 'store'])->name('profile.store');
+    Route::post('/profile-password', [RegisterController::class, 'store'])->name('register');
+
+    Route::get('/login', [LoginController::class, 'create'])->name('login');
+    Route::post('/login', [LoginController::class, 'store']);
 });
 
 Route::middleware('auth')->group(function () {
