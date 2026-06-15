@@ -14,4 +14,12 @@ class TenantPolicy
     {
         return $tenant->isAdministeredBy($user);
     }
+
+    /**
+     * Determine whether the user can switch their current tenant to this tenant.
+     */
+    public function switch(User $user, Tenant $tenant): bool
+    {
+        return $tenant->hasMember($user);
+    }
 }

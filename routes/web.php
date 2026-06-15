@@ -8,6 +8,7 @@ use App\Http\Controllers\InvitationController;
 use App\Http\Controllers\InvitationRedemptionController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\TenantController;
+use App\Http\Controllers\TenantSwitchController;
 use Illuminate\Support\Facades\Route;
 
 Route::view('/', 'home')->name('home');
@@ -36,6 +37,7 @@ Route::middleware('profile.complete')->group(function () {
     Route::post('/tenants', [TenantController::class, 'store'])->name('tenants.store');
     Route::get('/tenants/{tenant}/edit', [TenantController::class, 'edit'])->name('tenants.edit');
     Route::patch('/tenants/{tenant}', [TenantController::class, 'update'])->name('tenants.update');
+    Route::post('/tenants/{tenant}/switch', [TenantSwitchController::class, 'switch'])->name('tenants.switch');
 
     Route::get('/tenants/{tenant}/backup-code', [BackupCodeController::class, 'show'])->name('tenants.backup-code.show');
     Route::post('/tenants/{tenant}/backup-code', [BackupCodeController::class, 'store'])->name('tenants.backup-code.store');
