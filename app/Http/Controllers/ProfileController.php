@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Invitation;
 use App\Models\User;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\JsonResponse;
@@ -58,6 +59,8 @@ class ProfileController extends Controller
 
         Auth::login($user);
 
+        $this->redeemPendingInvitation($request, $user);
+
         $response = app(PasskeyRegistrationResponse::class)->withPasskey($passkey)->toResponse($request);
 
         if ($response instanceof JsonResponse) {
@@ -95,5 +98,24 @@ class ProfileController extends Controller
         }
 
         return redirect()->intended(route('home'));
+    }
+
+    /**
+     * Add the newly created user to the tenant referenced by a pending
+     * invitation stored in the session, if one is present and still usable.
+     */
+    private function redeemPendingInvitation(Request $request, User $user): void
+    {
+        $token = $request->session()->pull('pending_invitation_token');
+
+        if (! $token) {
+            return;
+        }
+
+        $invitation = Invitation::where('token', Invitation::hashToken($token))->first();
+
+        if ($invitation && $invitation->isUsable()) {
+            $invitation->redeemFor($user);
+        }
     }
 }

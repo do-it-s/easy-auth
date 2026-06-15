@@ -37,7 +37,7 @@ class TenantController extends Controller
         $tenant = Tenant::create($validated);
 
         $tenant->users()->attach($request->user(), [
-            'role' => 'owner',
+            'role' => Tenant::ADMIN_ROLE,
             'last_accessed_at' => now(),
         ]);
 
@@ -55,17 +55,33 @@ class TenantController extends Controller
     /**
      * Show the form for editing the specified resource.
      */
-    public function edit(Tenant $tenant)
+    public function edit(Tenant $tenant): View
     {
-        //
+        $this->authorize('update', $tenant);
+
+        return view('tenants.edit', [
+            'tenant' => $tenant,
+        ]);
     }
 
     /**
      * Update the specified resource in storage.
      */
-    public function update(Request $request, Tenant $tenant)
+    public function update(Request $request, Tenant $tenant): RedirectResponse
     {
-        //
+        $this->authorize('update', $tenant);
+
+        $validated = $request->validate([
+            'name' => ['required', 'string', 'max:255'],
+            'member_invites_enabled' => ['nullable', 'boolean'],
+        ]);
+
+        $tenant->update([
+            'name' => $validated['name'],
+            'member_invites_enabled' => $request->boolean('member_invites_enabled'),
+        ]);
+
+        return redirect()->route('tenants.edit', $tenant);
     }
 
     /**

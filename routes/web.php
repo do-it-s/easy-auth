@@ -1,6 +1,8 @@
 <?php
 
 use App\Http\Controllers\Auth\LogoutController;
+use App\Http\Controllers\InvitationController;
+use App\Http\Controllers\InvitationRedemptionController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\TenantController;
 use Illuminate\Support\Facades\Route;
@@ -23,4 +25,14 @@ Route::middleware('auth')->group(function () {
 Route::middleware('profile.complete')->group(function () {
     Route::get('/tenants/create', [TenantController::class, 'create'])->name('tenants.create');
     Route::post('/tenants', [TenantController::class, 'store'])->name('tenants.store');
+    Route::get('/tenants/{tenant}/edit', [TenantController::class, 'edit'])->name('tenants.edit');
+    Route::patch('/tenants/{tenant}', [TenantController::class, 'update'])->name('tenants.update');
+
+    Route::get('/tenants/{tenant}/invitations', [InvitationController::class, 'index'])->name('tenants.invitations.index');
+    Route::get('/tenants/{tenant}/invitations/create', [InvitationController::class, 'create'])->name('tenants.invitations.create');
+    Route::post('/tenants/{tenant}/invitations', [InvitationController::class, 'store'])->name('tenants.invitations.store');
+    Route::delete('/tenants/{tenant}/invitations/{invitation}', [InvitationController::class, 'destroy'])->name('tenants.invitations.destroy');
 });
+
+Route::get('/invitations/{token}', [InvitationRedemptionController::class, 'show'])->name('invitations.show');
+Route::post('/invitations/{token}', [InvitationRedemptionController::class, 'redeem'])->middleware('auth')->name('invitations.redeem');
