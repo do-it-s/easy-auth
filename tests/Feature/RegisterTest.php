@@ -19,6 +19,9 @@ test('a user can register with an email and password and is logged in', function
     expect($user)->not->toBeNull();
     expect($user->name)->toBe('Taro');
     $this->assertAuthenticatedAs($user);
+
+    expect($user->device)->not->toBeNull();
+    $response->assertJson(['device_uuid' => $user->device->uuid]);
 });
 
 test('registering with an email and password redeems a pending invitation', function () {

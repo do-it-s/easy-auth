@@ -8,6 +8,7 @@ use App\Models\User;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Str;
 use Illuminate\Validation\Rules\Password;
 
 class RegisterController extends Controller
@@ -30,6 +31,8 @@ class RegisterController extends Controller
             'password' => $validated['password'],
         ]);
 
+        $device = $user->device()->create(['uuid' => (string) Str::uuid()]);
+
         Auth::login($user);
 
         $invitation = $redeemPendingInvitation($request, $user);
@@ -40,6 +43,7 @@ class RegisterController extends Controller
 
         return response()->json([
             'redirect' => redirect()->intended($redirectTo)->getTargetUrl(),
+            'device_uuid' => $device->uuid,
         ]);
     }
 }

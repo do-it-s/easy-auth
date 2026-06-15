@@ -1,6 +1,7 @@
 <?php
 
 use App\Models\User;
+use Illuminate\Support\Str;
 
 test('a user can log in with the correct email and password', function () {
     $user = User::factory()->create([
@@ -57,4 +58,36 @@ test('authenticated users are redirected away from the login page', function () 
     $response = $this->actingAs($user)->get('/login');
 
     $response->assertRedirect(route('home'));
+});
+
+test('a user with a registered device can log in with the matching device UUID', function () {
+    $user = User::factory()->create([
+        'email' => 'taro@example.com',
+        'password' => 'password',
+    ]);
+    $device = $user->device()->create(['uuid' => (string) Str::uuid()]);
+
+    $response = $this->postJson('/login', [
+        'email' => 'taro@example.com',
+        'password' => 'password',
+    ], ['X-Device-Uuid' => $device->uuid]);
+
+    $response->assertOk();
+    $this->assertAuthenticatedAs($user);
+});
+
+test('a user with a registered device cannot log in from a different device', function () {
+    $user = User::factory()->create([
+        'email' => 'taro@example.com',
+        'password' => 'password',
+    ]);
+    $user->device()->create(['uuid' => (string) Str::uuid()]);
+
+    $response = $this->postJson('/login', [
+        'email' => 'taro@example.com',
+        'password' => 'password',
+    ], ['X-Device-Uuid' => (string) Str::uuid()]);
+
+    $response->assertUnprocessable()->assertJsonValidationErrors('email');
+    $this->assertGuest();
 });

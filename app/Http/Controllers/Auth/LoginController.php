@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
 use Illuminate\Contracts\View\View;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -22,7 +23,7 @@ class LoginController extends Controller
     /**
      * Handle an authentication attempt using email and password.
      */
-    public function store(Request $request): RedirectResponse
+    public function store(Request $request): RedirectResponse|JsonResponse
     {
         $credentials = $request->validate([
             'email' => ['required', 'string', 'email'],
@@ -31,11 +32,27 @@ class LoginController extends Controller
 
         if (! Auth::attempt($credentials)) {
             throw ValidationException::withMessages([
-                'email' => 'メールアドレスまたはパスワードが正しくありません。',
+                'email' => 'メールアドレス、パスワード、またはこの端末の情報が前回と一致しないため、ログインできません。',
+            ]);
+        }
+
+        $user = Auth::user();
+
+        if ($user->device && $user->device->uuid !== $request->header('X-Device-Uuid')) {
+            Auth::logout();
+
+            throw ValidationException::withMessages([
+                'email' => 'メールアドレス、パスワード、またはこの端末の情報が前回と一致しないため、ログインできません。',
             ]);
         }
 
         $request->session()->regenerate();
+
+        if ($request->wantsJson()) {
+            return response()->json([
+                'redirect' => redirect()->intended(route('home'))->getTargetUrl(),
+            ]);
+        }
 
         return redirect()->intended(route('home'));
     }

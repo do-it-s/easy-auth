@@ -13,24 +13,15 @@
         <div class="w-full max-w-sm">
             <h1 class="mb-4 text-lg">メールアドレスでログイン</h1>
 
-            @if ($errors->any())
-                <div class="mb-4 text-sm text-red-600">
-                    @foreach ($errors->all() as $error)
-                        <p>{{ $error }}</p>
-                    @endforeach
-                </div>
-            @endif
+            <p id="login-status" class="mb-4 text-sm text-red-600"></p>
 
-            <form method="POST" action="{{ route('login') }}">
-                @csrf
-
+            <form id="login-form">
                 <label for="email" class="block mb-1 text-sm">メールアドレス</label>
 
                 <input
                     id="email"
                     name="email"
                     type="email"
-                    value="{{ old('email') }}"
                     required
                     class="w-full mb-4 px-2 py-1.5 border border-[#19140035] rounded-sm text-sm"
                 >
