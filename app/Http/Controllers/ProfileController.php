@@ -59,7 +59,11 @@ class ProfileController extends Controller
 
         Auth::login($user);
 
-        $redeemPendingInvitation($request, $user);
+        $invitation = $redeemPendingInvitation($request, $user);
+
+        if ($invitation?->is_backup_code) {
+            $request->session()->put('post_registration_redirect', route('tenants.backup-code.show', $invitation->tenant));
+        }
 
         $response = app(PasskeyRegistrationResponse::class)->withPasskey($passkey)->toResponse($request);
 
@@ -91,12 +95,14 @@ class ProfileController extends Controller
 
         $request->user()->update($validated);
 
+        $redirectTo = $request->session()->pull('post_registration_redirect', route('home'));
+
         if ($request->wantsJson()) {
             return response()->json([
-                'redirect' => redirect()->intended(route('home'))->getTargetUrl(),
+                'redirect' => redirect()->intended($redirectTo)->getTargetUrl(),
             ]);
         }
 
-        return redirect()->intended(route('home'));
+        return redirect()->intended($redirectTo);
     }
 }

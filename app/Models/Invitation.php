@@ -9,11 +9,16 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Support\Str;
 
-#[Fillable(['tenant_id', 'role', 'token', 'label', 'expires_at', 'created_by', 'used_at', 'redeemed_by'])]
+#[Fillable(['tenant_id', 'role', 'token', 'label', 'expires_at', 'created_by', 'used_at', 'redeemed_by', 'is_backup_code'])]
 class Invitation extends Model
 {
     /** @use HasFactory<InvitationFactory> */
     use HasFactory;
+
+    /**
+     * The default validity period for newly issued invitations, in minutes.
+     */
+    public const DEFAULT_EXPIRATION_MINUTES = 30;
 
     /**
      * @return array<string, string>
@@ -23,6 +28,7 @@ class Invitation extends Model
         return [
             'expires_at' => 'datetime',
             'used_at' => 'datetime',
+            'is_backup_code' => 'boolean',
         ];
     }
 
@@ -88,15 +94,40 @@ class Invitation extends Model
     }
 
     /**
-     * Add the given user to this invitation's tenant with the invited role,
-     * and mark the invitation as used.
+     * Determine whether the given user can redeem this invitation.
+     *
+     * Normally an invitation can only be redeemed by a user who is not yet
+     * a member of the tenant. The exception is an administrator backup
+     * code, which an existing non-admin member may redeem to be promoted
+     * to administrator.
+     */
+    public function canBeRedeemedBy(User $user): bool
+    {
+        if (! $this->tenant->hasMember($user)) {
+            return true;
+        }
+
+        return $this->is_backup_code && ! $this->tenant->isAdministeredBy($user);
+    }
+
+    /**
+     * Add the given user to this invitation's tenant with the invited role
+     * (or promote them to it, if already a member), and mark the
+     * invitation as used.
      */
     public function redeemFor(User $user): void
     {
-        $this->tenant->users()->attach($user, [
-            'role' => $this->role,
-            'last_accessed_at' => now(),
-        ]);
+        if ($this->tenant->hasMember($user)) {
+            $this->tenant->users()->updateExistingPivot($user, [
+                'role' => $this->role,
+                'last_accessed_at' => now(),
+            ]);
+        } else {
+            $this->tenant->users()->attach($user, [
+                'role' => $this->role,
+                'last_accessed_at' => now(),
+            ]);
+        }
 
         $this->update([
             'used_at' => now(),

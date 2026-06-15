@@ -31,9 +31,9 @@ class InvitationRedemptionController extends Controller
             return redirect()->route('profile.create');
         }
 
-        if ($invitation->tenant->hasMember($user)) {
+        if (! $invitation->canBeRedeemedBy($user)) {
             return view('invitations.show', [
-                'status' => 'already_member',
+                'status' => $invitation->tenant->isAdministeredBy($user) ? 'already_admin' : 'already_member',
                 'invitation' => $invitation,
             ]);
         }
@@ -42,6 +42,7 @@ class InvitationRedemptionController extends Controller
             'status' => 'confirm',
             'invitation' => $invitation,
             'token' => $token,
+            'alreadyMember' => $invitation->tenant->hasMember($user),
         ]);
     }
 
@@ -61,14 +62,18 @@ class InvitationRedemptionController extends Controller
 
         $user = $request->user();
 
-        if ($invitation->tenant->hasMember($user)) {
+        if (! $invitation->canBeRedeemedBy($user)) {
             return view('invitations.show', [
-                'status' => 'already_member',
+                'status' => $invitation->tenant->isAdministeredBy($user) ? 'already_admin' : 'already_member',
                 'invitation' => $invitation,
             ]);
         }
 
         $invitation->redeemFor($user);
+
+        if ($invitation->is_backup_code) {
+            return redirect()->route('tenants.backup-code.show', $invitation->tenant);
+        }
 
         return redirect()->route('home');
     }

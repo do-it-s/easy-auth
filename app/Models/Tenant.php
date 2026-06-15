@@ -83,4 +83,15 @@ class Tenant extends Model
             ->wherePivot('user_id', $user->id)
             ->exists();
     }
+
+    /**
+     * Determine whether this tenant has an unused administrator backup code.
+     */
+    public function hasUsableBackupCode(): bool
+    {
+        return $this->invitations()
+            ->where('is_backup_code', true)
+            ->whereNull('used_at')
+            ->exists();
+    }
 }

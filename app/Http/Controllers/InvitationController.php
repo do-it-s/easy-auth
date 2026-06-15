@@ -21,7 +21,7 @@ class InvitationController extends Controller
 
         return view('tenants.invitations.index', [
             'tenant' => $tenant,
-            'invitations' => $tenant->invitations()->latest()->get(),
+            'invitations' => $tenant->invitations()->where('is_backup_code', false)->latest()->get(),
         ]);
     }
 
@@ -41,6 +41,7 @@ class InvitationController extends Controller
             'invitationQrCode' => $invitationUrl
                 ? (new Builder)->build(data: $invitationUrl)->getDataUri()
                 : null,
+            'defaultExpiresAt' => now()->addMinutes(Invitation::DEFAULT_EXPIRATION_MINUTES)->format('Y-m-d\TH:i'),
         ]);
     }
 

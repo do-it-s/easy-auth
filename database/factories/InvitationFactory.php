@@ -50,6 +50,19 @@ class InvitationFactory extends Factory
     }
 
     /**
+     * Indicate that the invitation is an administrator backup code.
+     */
+    public function backupCode(): static
+    {
+        return $this->state(fn (array $attributes) => [
+            'role' => Tenant::ADMIN_ROLE,
+            'label' => '緊急用バックアップコード',
+            'expires_at' => null,
+            'is_backup_code' => true,
+        ]);
+    }
+
+    /**
      * Indicate that the invitation has already been used.
      */
     public function used(): static

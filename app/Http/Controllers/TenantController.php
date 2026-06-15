@@ -41,7 +41,7 @@ class TenantController extends Controller
             'last_accessed_at' => now(),
         ]);
 
-        return redirect()->route('home');
+        return redirect()->route('tenants.backup-code.show', $tenant);
     }
 
     /**

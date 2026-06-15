@@ -62,7 +62,7 @@
                     id="expires_at"
                     name="expires_at"
                     type="datetime-local"
-                    value="{{ old('expires_at') }}"
+                    value="{{ old('expires_at', $defaultExpiresAt) }}"
                     class="w-full mb-4 px-2 py-1.5 border border-[#19140035] rounded-sm text-sm"
                 >
 

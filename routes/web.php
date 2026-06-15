@@ -3,6 +3,7 @@
 use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\Auth\LogoutController;
 use App\Http\Controllers\Auth\RegisterController;
+use App\Http\Controllers\BackupCodeController;
 use App\Http\Controllers\InvitationController;
 use App\Http\Controllers\InvitationRedemptionController;
 use App\Http\Controllers\ProfileController;
@@ -33,6 +34,9 @@ Route::middleware('profile.complete')->group(function () {
     Route::post('/tenants', [TenantController::class, 'store'])->name('tenants.store');
     Route::get('/tenants/{tenant}/edit', [TenantController::class, 'edit'])->name('tenants.edit');
     Route::patch('/tenants/{tenant}', [TenantController::class, 'update'])->name('tenants.update');
+
+    Route::get('/tenants/{tenant}/backup-code', [BackupCodeController::class, 'show'])->name('tenants.backup-code.show');
+    Route::post('/tenants/{tenant}/backup-code', [BackupCodeController::class, 'store'])->name('tenants.backup-code.store');
 
     Route::get('/tenants/{tenant}/invitations', [InvitationController::class, 'index'])->name('tenants.invitations.index');
     Route::get('/tenants/{tenant}/invitations/create', [InvitationController::class, 'create'])->name('tenants.invitations.create');

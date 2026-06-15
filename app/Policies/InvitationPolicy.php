@@ -30,6 +30,7 @@ class InvitationPolicy
      */
     public function delete(User $user, Invitation $invitation): bool
     {
-        return $invitation->tenant->isAdministeredBy($user);
+        return ! $invitation->is_backup_code
+            && $invitation->tenant->isAdministeredBy($user);
     }
 }

@@ -32,10 +32,14 @@ class RegisterController extends Controller
 
         Auth::login($user);
 
-        $redeemPendingInvitation($request, $user);
+        $invitation = $redeemPendingInvitation($request, $user);
+
+        $redirectTo = $invitation?->is_backup_code
+            ? route('tenants.backup-code.show', $invitation->tenant)
+            : route('home');
 
         return response()->json([
-            'redirect' => redirect()->intended(route('home'))->getTargetUrl(),
+            'redirect' => redirect()->intended($redirectTo)->getTargetUrl(),
         ]);
     }
 }
