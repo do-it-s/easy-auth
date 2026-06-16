@@ -1,0 +1,132 @@
+<?php
+
+use App\Models\Tenant;
+use App\Models\User;
+
+test('admin can view the member list', function () {
+    $admin = User::factory()->create(['name' => '管理者']);
+    $member = User::factory()->create(['name' => 'メンバー太郎']);
+    $tenant = Tenant::factory()->create();
+
+    $tenant->users()->attach($admin, ['role' => Tenant::ADMIN_ROLE, 'last_accessed_at' => now()]);
+    $tenant->users()->attach($member, ['role' => Tenant::MEMBER_ROLE, 'last_accessed_at' => now()->subDay()]);
+
+    $response = $this->actingAs($admin)->get(route('tenants.members.index', $tenant));
+
+    $response->assertOk();
+    $response->assertSee('管理者');
+    $response->assertSee('メンバー太郎');
+});
+
+test('ordinary member cannot view the member list', function () {
+    $member = User::factory()->create(['name' => 'メンバー']);
+    $tenant = Tenant::factory()->create();
+    $tenant->users()->attach($member, ['role' => Tenant::MEMBER_ROLE, 'last_accessed_at' => now()]);
+
+    $this->actingAs($member)->get(route('tenants.members.index', $tenant))->assertForbidden();
+});
+
+test('non-member cannot view the member list', function () {
+    $outsider = User::factory()->create(['name' => '部外者']);
+    $tenant = Tenant::factory()->create();
+
+    $this->actingAs($outsider)->get(route('tenants.members.index', $tenant))->assertForbidden();
+});
+
+test('member list shows admins in the first section and others in the second', function () {
+    $admin = User::factory()->create(['name' => '管理者花子']);
+    $member = User::factory()->create(['name' => 'メンバー太郎']);
+    $tenant = Tenant::factory()->create();
+
+    $tenant->users()->attach($admin, ['role' => Tenant::ADMIN_ROLE, 'last_accessed_at' => now()]);
+    $tenant->users()->attach($member, ['role' => Tenant::MEMBER_ROLE, 'last_accessed_at' => now()]);
+
+    $response = $this->actingAs($admin)->get(route('tenants.members.index', $tenant));
+
+    $response->assertSeeInOrder(['管理者花子', 'メンバー太郎']);
+});
+
+test('admin can promote a member to admin', function () {
+    $admin = User::factory()->create(['name' => '管理者']);
+    $member = User::factory()->create(['name' => 'メンバー']);
+    $tenant = Tenant::factory()->create();
+
+    $tenant->users()->attach($admin, ['role' => Tenant::ADMIN_ROLE, 'last_accessed_at' => now()]);
+    $tenant->users()->attach($member, ['role' => Tenant::MEMBER_ROLE, 'last_accessed_at' => now()]);
+
+    $response = $this->actingAs($admin)->patch(route('tenants.members.update', [$tenant, $member]), [
+        'role' => Tenant::ADMIN_ROLE,
+    ]);
+
+    $response->assertRedirect(route('tenants.members.index', $tenant));
+    expect($tenant->users()->wherePivot('user_id', $member->id)->first()->pivot->role)->toBe(Tenant::ADMIN_ROLE);
+});
+
+test('admin who demotes themselves is redirected to home', function () {
+    $admin1 = User::factory()->create(['name' => '管理者1']);
+    $admin2 = User::factory()->create(['name' => '管理者2']);
+    $tenant = Tenant::factory()->create();
+
+    $tenant->users()->attach($admin1, ['role' => Tenant::ADMIN_ROLE, 'last_accessed_at' => now()]);
+    $tenant->users()->attach($admin2, ['role' => Tenant::ADMIN_ROLE, 'last_accessed_at' => now()]);
+
+    $response = $this->actingAs($admin1)->patch(route('tenants.members.update', [$tenant, $admin1]), [
+        'role' => Tenant::MEMBER_ROLE,
+    ]);
+
+    $response->assertRedirect(route('home'));
+    expect($tenant->users()->wherePivot('user_id', $admin1->id)->first()->pivot->role)->toBe(Tenant::MEMBER_ROLE);
+});
+
+test('admin can demote another admin when other admins exist', function () {
+    $admin1 = User::factory()->create(['name' => '管理者1']);
+    $admin2 = User::factory()->create(['name' => '管理者2']);
+    $tenant = Tenant::factory()->create();
+
+    $tenant->users()->attach($admin1, ['role' => Tenant::ADMIN_ROLE, 'last_accessed_at' => now()]);
+    $tenant->users()->attach($admin2, ['role' => Tenant::ADMIN_ROLE, 'last_accessed_at' => now()]);
+
+    $response = $this->actingAs($admin1)->patch(route('tenants.members.update', [$tenant, $admin2]), [
+        'role' => Tenant::MEMBER_ROLE,
+    ]);
+
+    $response->assertRedirect(route('tenants.members.index', $tenant));
+    expect($tenant->users()->wherePivot('user_id', $admin2->id)->first()->pivot->role)->toBe(Tenant::MEMBER_ROLE);
+});
+
+test('cannot demote the last admin', function () {
+    $admin = User::factory()->create(['name' => '管理者']);
+    $tenant = Tenant::factory()->create();
+    $tenant->users()->attach($admin, ['role' => Tenant::ADMIN_ROLE, 'last_accessed_at' => now()]);
+
+    $response = $this->actingAs($admin)->patch(route('tenants.members.update', [$tenant, $admin]), [
+        'role' => Tenant::MEMBER_ROLE,
+    ]);
+
+    $response->assertSessionHasErrors('role');
+    expect($tenant->users()->wherePivot('user_id', $admin->id)->first()->pivot->role)->toBe(Tenant::ADMIN_ROLE);
+});
+
+test('member cannot change roles', function () {
+    $member = User::factory()->create(['name' => 'メンバー']);
+    $other = User::factory()->create(['name' => 'もう一人']);
+    $tenant = Tenant::factory()->create();
+
+    $tenant->users()->attach($member, ['role' => Tenant::MEMBER_ROLE, 'last_accessed_at' => now()]);
+    $tenant->users()->attach($other, ['role' => Tenant::MEMBER_ROLE, 'last_accessed_at' => now()]);
+
+    $this->actingAs($member)->patch(route('tenants.members.update', [$tenant, $other]), [
+        'role' => Tenant::ADMIN_ROLE,
+    ])->assertForbidden();
+});
+
+test('non-member cannot change roles', function () {
+    $outsider = User::factory()->create(['name' => '部外者']);
+    $member = User::factory()->create(['name' => 'メンバー']);
+    $tenant = Tenant::factory()->create();
+    $tenant->users()->attach($member, ['role' => Tenant::MEMBER_ROLE, 'last_accessed_at' => now()]);
+
+    $this->actingAs($outsider)->patch(route('tenants.members.update', [$tenant, $member]), [
+        'role' => Tenant::ADMIN_ROLE,
+    ])->assertForbidden();
+});

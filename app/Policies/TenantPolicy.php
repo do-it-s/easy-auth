@@ -8,6 +8,22 @@ use App\Models\User;
 class TenantPolicy
 {
     /**
+     * Determine whether the user can view the tenant's member list.
+     */
+    public function viewAnyMember(User $user, Tenant $tenant): bool
+    {
+        return $tenant->isAdministeredBy($user);
+    }
+
+    /**
+     * Determine whether the user can change a member's role within the tenant.
+     */
+    public function updateMember(User $user, Tenant $tenant): bool
+    {
+        return $tenant->isAdministeredBy($user);
+    }
+
+    /**
      * Determine whether the user can update the tenant's settings.
      */
     public function update(User $user, Tenant $tenant): bool
