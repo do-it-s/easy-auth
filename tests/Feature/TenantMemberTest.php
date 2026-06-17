@@ -62,7 +62,7 @@ test('admin can promote a member to admin', function () {
     expect($tenant->users()->wherePivot('user_id', $member->id)->first()->pivot->role)->toBe(Tenant::ADMIN_ROLE);
 });
 
-test('admin who demotes themselves is redirected to home', function () {
+test('admin cannot demote themselves', function () {
     $admin1 = User::factory()->create(['name' => '管理者1']);
     $admin2 = User::factory()->create(['name' => '管理者2']);
     $tenant = Tenant::factory()->create();
@@ -70,12 +70,11 @@ test('admin who demotes themselves is redirected to home', function () {
     $tenant->users()->attach($admin1, ['role' => Tenant::ADMIN_ROLE, 'last_accessed_at' => now()]);
     $tenant->users()->attach($admin2, ['role' => Tenant::ADMIN_ROLE, 'last_accessed_at' => now()]);
 
-    $response = $this->actingAs($admin1)->patch(route('tenants.members.update', [$tenant, $admin1]), [
+    $this->actingAs($admin1)->patch(route('tenants.members.update', [$tenant, $admin1]), [
         'role' => Tenant::MEMBER_ROLE,
-    ]);
+    ])->assertForbidden();
 
-    $response->assertRedirect(route('home'));
-    expect($tenant->users()->wherePivot('user_id', $admin1->id)->first()->pivot->role)->toBe(Tenant::MEMBER_ROLE);
+    expect($tenant->users()->wherePivot('user_id', $admin1->id)->first()->pivot->role)->toBe(Tenant::ADMIN_ROLE);
 });
 
 test('admin can demote another admin when other admins exist', function () {
@@ -99,11 +98,10 @@ test('cannot demote the last admin', function () {
     $tenant = Tenant::factory()->create();
     $tenant->users()->attach($admin, ['role' => Tenant::ADMIN_ROLE, 'last_accessed_at' => now()]);
 
-    $response = $this->actingAs($admin)->patch(route('tenants.members.update', [$tenant, $admin]), [
+    $this->actingAs($admin)->patch(route('tenants.members.update', [$tenant, $admin]), [
         'role' => Tenant::MEMBER_ROLE,
-    ]);
+    ])->assertForbidden();
 
-    $response->assertSessionHasErrors('role');
     expect($tenant->users()->wherePivot('user_id', $admin->id)->first()->pivot->role)->toBe(Tenant::ADMIN_ROLE);
 });
 
@@ -129,4 +127,13 @@ test('non-member cannot change roles', function () {
     $this->actingAs($outsider)->patch(route('tenants.members.update', [$tenant, $member]), [
         'role' => Tenant::ADMIN_ROLE,
     ])->assertForbidden();
+});
+
+test('admin cannot remove themselves', function () {
+    $admin = User::factory()->create(['name' => '管理者']);
+    $tenant = Tenant::factory()->create();
+    $tenant->users()->attach($admin, ['role' => Tenant::ADMIN_ROLE, 'last_accessed_at' => now()]);
+
+    $this->actingAs($admin)->delete(route('tenants.members.destroy', [$tenant, $admin]))
+        ->assertForbidden();
 });

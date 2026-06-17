@@ -18,8 +18,24 @@ class TenantPolicy
     /**
      * Determine whether the user can change a member's role within the tenant.
      */
-    public function updateMember(User $user, Tenant $tenant): bool
+    public function updateMember(User $user, Tenant $tenant, User $targetUser): bool
     {
+        if ($user->is($targetUser)) {
+            return false;
+        }
+
+        return $tenant->isAdministeredBy($user);
+    }
+
+    /**
+     * Determine whether the user can remove a member from the tenant.
+     */
+    public function removeMember(User $user, Tenant $tenant, User $targetUser): bool
+    {
+        if ($user->is($targetUser)) {
+            return false;
+        }
+
         return $tenant->isAdministeredBy($user);
     }
 

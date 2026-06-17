@@ -19,7 +19,7 @@
                 </p>
 
                 @if ($adminCount > 1)
-                    @can('updateMember', $tenant)
+                    @can('updateMember', [$tenant, $member])
                         <form method="POST" action="{{ route('tenants.members.update', [$tenant, $member]) }}" class="mt-2">
                             @csrf
                             @method('PATCH')
@@ -45,7 +45,7 @@
                     {{ $member->pivot->last_accessed_at ? \Carbon\Carbon::parse($member->pivot->last_accessed_at)->format('Y-m-d H:i') : '不明' }}
                 </p>
 
-                @can('updateMember', $tenant)
+                @can('updateMember', [$tenant, $member])
                     <form method="POST" action="{{ route('tenants.members.update', [$tenant, $member]) }}" class="mt-2">
                         @csrf
                         @method('PATCH')

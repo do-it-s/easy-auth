@@ -36,7 +36,7 @@ class TenantMemberController extends Controller
      */
     public function update(Request $request, Tenant $tenant, User $user): RedirectResponse
     {
-        $this->authorize('updateMember', $tenant);
+        $this->authorize('updateMember', [$tenant, $user]);
 
         abort_unless($tenant->hasMember($user), 404);
 
@@ -53,10 +53,6 @@ class TenantMemberController extends Controller
 
         $tenant->users()->updateExistingPivot($user, ['role' => $validated['role']]);
 
-        if ($user->is($request->user())) {
-            return redirect()->route('home');
-        }
-
         return redirect()->route('tenants.members.index', $tenant);
     }
 
@@ -67,6 +63,8 @@ class TenantMemberController extends Controller
      */
     public function destroy(Tenant $tenant, User $user): RedirectResponse
     {
+        $this->authorize('removeMember', [$tenant, $user]);
+
         abort(501);
     }
 }
