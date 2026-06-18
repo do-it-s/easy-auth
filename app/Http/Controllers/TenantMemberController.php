@@ -58,8 +58,6 @@ class TenantMemberController extends Controller
 
     /**
      * Remove a member from the tenant.
-     *
-     * @todo WBS 4.1: 自主脱退
      */
     public function destroy(Tenant $tenant, User $user): RedirectResponse
     {
@@ -77,5 +75,34 @@ class TenantMemberController extends Controller
         $tenant->users()->detach($user);
 
         return redirect()->route('tenants.members.index', $tenant);
+    }
+
+    /**
+     * Leave the tenant on the authenticated user's own initiative.
+     */
+    public function leave(Request $request, Tenant $tenant): RedirectResponse
+    {
+        $user = $request->user();
+
+        $this->authorize('leave', $tenant);
+
+        $validated = $request->validate([
+            'name' => ['required', 'string'],
+        ]);
+
+        if ($validated['name'] !== $user->name) {
+            return back()->withErrors(['name' => '入力された名前が一致しません。'], 'leaveTenant');
+        }
+
+        if ($tenant->isAdministeredBy($user)) {
+            $adminCount = $tenant->users()->wherePivot('role', Tenant::ADMIN_ROLE)->count();
+            if ($adminCount <= 1) {
+                return back()->withErrors(['name' => '最後の管理者は脱退できません。'], 'leaveTenant');
+            }
+        }
+
+        $tenant->users()->detach($user);
+
+        return redirect()->route('profile.edit');
     }
 }

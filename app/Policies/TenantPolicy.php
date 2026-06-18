@@ -40,6 +40,14 @@ class TenantPolicy
     }
 
     /**
+     * Determine whether the user can leave the tenant on their own.
+     */
+    public function leave(User $user, Tenant $tenant): bool
+    {
+        return $tenant->hasMember($user);
+    }
+
+    /**
      * Determine whether the user can update the tenant's settings.
      */
     public function update(User $user, Tenant $tenant): bool
