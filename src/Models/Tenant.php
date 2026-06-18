@@ -1,0 +1,105 @@
+<?php
+
+namespace DoITs\EasyAuth\Models;
+
+use Database\Factories\TenantFactory;
+use DoITs\EasyAuth\Contracts\EasyAuthUser;
+use Illuminate\Database\Eloquent\Attributes\Fillable;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Database\Eloquent\Relations\HasMany;
+
+#[Fillable(['name', 'member_invites_enabled'])]
+class Tenant extends Model
+{
+    use HasFactory;
+
+    /**
+     * Namespace used to reserve role identifiers for this package.
+     */
+    public const ROLE_NAMESPACE = 'easy-auth';
+
+    /**
+     * The role that grants tenant management permissions (member removal,
+     * invitation management, etc.). Reserved across the whole package.
+     */
+    public const ADMIN_ROLE = self::ROLE_NAMESPACE.'.tenant-admin';
+
+    /**
+     * The default role granted to ordinary members.
+     */
+    public const MEMBER_ROLE = 'member';
+
+    /**
+     * @return array<string, string>
+     */
+    protected function casts(): array
+    {
+        return [
+            'member_invites_enabled' => 'boolean',
+        ];
+    }
+
+    /**
+     * The users that belong to the tenant.
+     *
+     * @return BelongsToMany<EasyAuthUser, $this>
+     */
+    public function users(): BelongsToMany
+    {
+        return $this->belongsToMany(config('auth.providers.users.model'))
+            ->withPivot(['role', 'last_accessed_at'])
+            ->withTimestamps();
+    }
+
+    /**
+     * The invitations issued for this tenant.
+     *
+     * @return HasMany<Invitation, $this>
+     */
+    public function invitations(): HasMany
+    {
+        return $this->hasMany(Invitation::class);
+    }
+
+    /**
+     * Determine whether the given user has tenant management permissions.
+     */
+    public function isAdministeredBy(EasyAuthUser $user): bool
+    {
+        return $this->users()
+            ->wherePivot('user_id', $user->id)
+            ->wherePivot('role', self::ADMIN_ROLE)
+            ->exists();
+    }
+
+    /**
+     * Determine whether the given user belongs to this tenant, regardless of role.
+     */
+    public function hasMember(EasyAuthUser $user): bool
+    {
+        return $this->users()
+            ->wherePivot('user_id', $user->id)
+            ->exists();
+    }
+
+    /**
+     * Determine whether this tenant has an unused administrator backup code.
+     */
+    public function hasUsableBackupCode(): bool
+    {
+        return $this->invitations()
+            ->where('is_backup_code', true)
+            ->whereNull('used_at')
+            ->exists();
+    }
+
+    /**
+     * @return TenantFactory
+     */
+    protected static function newFactory()
+    {
+        return TenantFactory::new();
+    }
+}

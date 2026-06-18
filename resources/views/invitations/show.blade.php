@@ -28,9 +28,9 @@
         @else
             <p class="mb-4">
                 「{{ $invitation->tenant->name }}」に
-                @if ($invitation->role === \App\Models\Tenant::ADMIN_ROLE)
+                @if ($invitation->role === \DoITs\EasyAuth\Models\Tenant::ADMIN_ROLE)
                     管理者
-                @elseif ($invitation->role === \App\Models\Tenant::MEMBER_ROLE)
+                @elseif ($invitation->role === \DoITs\EasyAuth\Models\Tenant::MEMBER_ROLE)
                     メンバー
                 @else
                     {{ $invitation->role }}

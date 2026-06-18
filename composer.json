@@ -1,0 +1,47 @@
+{
+    "name": "do-it-s/easy-auth",
+    "type": "library",
+    "description": "Passwordless auth (passkeys + device UUID) with an invitation-chain tenant/role model, designed for low IT-literacy organizations.",
+    "license": "MIT",
+    "require": {
+        "php": "^8.3",
+        "endroid/qr-code": "6.0.*",
+        "illuminate/support": "^13.0",
+        "laravel/passkeys": "^0.2.1"
+    },
+    "require-dev": {
+        "fakerphp/faker": "^1.23",
+        "laravel/pint": "^1.27",
+        "mockery/mockery": "^1.6",
+        "orchestra/testbench": "*",
+        "pestphp/pest": "^4.7",
+        "pestphp/pest-plugin-laravel": "^4.1"
+    },
+    "autoload": {
+        "psr-4": {
+            "DoITs\\EasyAuth\\": "src/",
+            "Database\\Factories\\": "database/factories/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "DoITs\\EasyAuth\\Tests\\": "tests/"
+        }
+    },
+    "extra": {
+        "laravel": {
+            "providers": [
+                "DoITs\\EasyAuth\\EasyAuthServiceProvider"
+            ]
+        }
+    },
+    "config": {
+        "sort-packages": true,
+        "allow-plugins": {
+            "pestphp/pest-plugin": true,
+            "php-http/discovery": true
+        }
+    },
+    "minimum-stability": "stable",
+    "prefer-stable": true
+}

@@ -1,7 +1,7 @@
 <?php
 
-use App\Models\Tenant;
-use App\Models\User;
+use DoITs\EasyAuth\Models\Tenant;
+use DoITs\EasyAuth\Tests\Fixtures\User;
 
 function attachMember(Tenant $tenant, User $user, ?DateTimeInterface $lastAccessedAt = null): void
 {

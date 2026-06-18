@@ -1,6 +1,6 @@
 <?php
 
-use App\Models\User;
+use DoITs\EasyAuth\Tests\Fixtures\User;
 
 test('guests visiting tenant creation are redirected to the registration page', function () {
     $response = $this->get('/tenants/create');
