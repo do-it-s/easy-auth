@@ -11,6 +11,8 @@ use Illuminate\Database\Eloquent\Factories\Factory;
  */
 class InvitationFactory extends Factory
 {
+    protected $model = Invitation::class;
+
     /**
      * Define the model's default state.
      *

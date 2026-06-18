@@ -23,7 +23,13 @@ class EasyAuthServiceProvider extends ServiceProvider
     {
         $this->loadMigrationsFrom(__DIR__.'/../database/migrations');
         $this->loadViewsFrom(__DIR__.'/../resources/views', 'easy-auth');
-        $this->loadRoutesFrom(__DIR__.'/../routes/web.php');
+
+        // loadRoutesFrom() alone does not inherit the host application's
+        // "web" middleware group (session, CSRF, cookies, shared errors),
+        // so it must be applied explicitly here.
+        Route::middleware('web')->group(function () {
+            $this->loadRoutesFrom(__DIR__.'/../routes/web.php');
+        });
 
         $this->app['router']->aliasMiddleware('profile.complete', EnsureProfileIsComplete::class);
 

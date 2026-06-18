@@ -2,6 +2,7 @@
 
 namespace DoITs\EasyAuth\Models;
 
+use DoITs\EasyAuth\Contracts\EasyAuthUser;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -12,7 +13,7 @@ class Device extends Model
     /**
      * The user this device belongs to.
      *
-     * @return BelongsTo<\DoITs\EasyAuth\Contracts\EasyAuthUser, $this>
+     * @return BelongsTo<EasyAuthUser, $this>
      */
     public function user(): BelongsTo
     {

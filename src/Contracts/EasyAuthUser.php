@@ -2,6 +2,7 @@
 
 namespace DoITs\EasyAuth\Contracts;
 
+use DoITs\EasyAuth\Models\Device;
 use DoITs\EasyAuth\Models\Tenant;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
@@ -17,7 +18,7 @@ interface EasyAuthUser
     /**
      * The device this user is bound to.
      *
-     * @return HasOne<\DoITs\EasyAuth\Models\Device, $this>
+     * @return HasOne<Device, $this>
      */
     public function device(): HasOne;
 
