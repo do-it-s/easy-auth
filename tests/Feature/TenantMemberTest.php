@@ -137,3 +137,64 @@ test('admin cannot remove themselves', function () {
     $this->actingAs($admin)->delete(route('tenants.members.destroy', [$tenant, $admin]))
         ->assertForbidden();
 });
+
+test('admin can remove a member', function () {
+    $admin = User::factory()->create(['name' => '管理者']);
+    $member = User::factory()->create(['name' => 'メンバー']);
+    $tenant = Tenant::factory()->create();
+
+    $tenant->users()->attach($admin, ['role' => Tenant::ADMIN_ROLE, 'last_accessed_at' => now()]);
+    $tenant->users()->attach($member, ['role' => Tenant::MEMBER_ROLE, 'last_accessed_at' => now()]);
+
+    $response = $this->actingAs($admin)->delete(route('tenants.members.destroy', [$tenant, $member]));
+
+    $response->assertRedirect(route('tenants.members.index', $tenant));
+    expect($tenant->hasMember($member))->toBeFalse();
+});
+
+test('admin can remove another admin when other admins exist', function () {
+    $admin1 = User::factory()->create(['name' => '管理者1']);
+    $admin2 = User::factory()->create(['name' => '管理者2']);
+    $tenant = Tenant::factory()->create();
+
+    $tenant->users()->attach($admin1, ['role' => Tenant::ADMIN_ROLE, 'last_accessed_at' => now()]);
+    $tenant->users()->attach($admin2, ['role' => Tenant::ADMIN_ROLE, 'last_accessed_at' => now()]);
+
+    $response = $this->actingAs($admin1)->delete(route('tenants.members.destroy', [$tenant, $admin2]));
+
+    $response->assertRedirect(route('tenants.members.index', $tenant));
+    expect($tenant->hasMember($admin2))->toBeFalse();
+});
+
+test('cannot remove the last admin', function () {
+    $admin = User::factory()->create(['name' => '管理者']);
+    $tenant = Tenant::factory()->create();
+    $tenant->users()->attach($admin, ['role' => Tenant::ADMIN_ROLE, 'last_accessed_at' => now()]);
+
+    $this->actingAs($admin)->delete(route('tenants.members.destroy', [$tenant, $admin]))
+        ->assertForbidden();
+
+    expect($tenant->hasMember($admin))->toBeTrue();
+});
+
+test('member cannot remove other members', function () {
+    $member = User::factory()->create(['name' => 'メンバー']);
+    $other = User::factory()->create(['name' => 'もう一人']);
+    $tenant = Tenant::factory()->create();
+
+    $tenant->users()->attach($member, ['role' => Tenant::MEMBER_ROLE, 'last_accessed_at' => now()]);
+    $tenant->users()->attach($other, ['role' => Tenant::MEMBER_ROLE, 'last_accessed_at' => now()]);
+
+    $this->actingAs($member)->delete(route('tenants.members.destroy', [$tenant, $other]))
+        ->assertForbidden();
+});
+
+test('non-member cannot remove a member', function () {
+    $outsider = User::factory()->create(['name' => '部外者']);
+    $member = User::factory()->create(['name' => 'メンバー']);
+    $tenant = Tenant::factory()->create();
+    $tenant->users()->attach($member, ['role' => Tenant::MEMBER_ROLE, 'last_accessed_at' => now()]);
+
+    $this->actingAs($outsider)->delete(route('tenants.members.destroy', [$tenant, $member]))
+        ->assertForbidden();
+});

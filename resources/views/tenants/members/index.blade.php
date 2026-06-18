@@ -19,16 +19,28 @@
                 </p>
 
                 @if ($adminCount > 1)
-                    @can('updateMember', [$tenant, $member])
-                        <form method="POST" action="{{ route('tenants.members.update', [$tenant, $member]) }}" class="mt-2">
-                            @csrf
-                            @method('PATCH')
-                            <input type="hidden" name="role" value="{{ \App\Models\Tenant::MEMBER_ROLE }}">
-                            <button type="submit" class="inline-block px-5 py-1.5 border border-[#19140035] rounded-sm text-sm leading-normal hover:bg-[#19140012]">
-                                降格
-                            </button>
-                        </form>
-                    @endcan
+                    <div class="mt-2 flex gap-2">
+                        @can('updateMember', [$tenant, $member])
+                            <form method="POST" action="{{ route('tenants.members.update', [$tenant, $member]) }}">
+                                @csrf
+                                @method('PATCH')
+                                <input type="hidden" name="role" value="{{ \App\Models\Tenant::MEMBER_ROLE }}">
+                                <button type="submit" class="inline-block px-5 py-1.5 border border-[#19140035] rounded-sm text-sm leading-normal hover:bg-[#19140012]">
+                                    降格
+                                </button>
+                            </form>
+                        @endcan
+
+                        @can('removeMember', [$tenant, $member])
+                            <form method="POST" action="{{ route('tenants.members.destroy', [$tenant, $member]) }}" onsubmit="return confirm('このメンバーをテナントから脱退させますか?')">
+                                @csrf
+                                @method('DELETE')
+                                <button type="submit" class="inline-block px-5 py-1.5 border border-[#19140035] rounded-sm text-sm leading-normal hover:bg-[#19140012]">
+                                    脱退
+                                </button>
+                            </form>
+                        @endcan
+                    </div>
                 @endif
             </div>
         @empty
@@ -45,16 +57,28 @@
                     {{ $member->pivot->last_accessed_at ? \Carbon\Carbon::parse($member->pivot->last_accessed_at)->format('Y-m-d H:i') : '不明' }}
                 </p>
 
-                @can('updateMember', [$tenant, $member])
-                    <form method="POST" action="{{ route('tenants.members.update', [$tenant, $member]) }}" class="mt-2">
-                        @csrf
-                        @method('PATCH')
-                        <input type="hidden" name="role" value="{{ \App\Models\Tenant::ADMIN_ROLE }}">
-                        <button type="submit" class="inline-block px-5 py-1.5 border border-[#19140035] rounded-sm text-sm leading-normal hover:bg-[#19140012]">
-                            昇格
-                        </button>
-                    </form>
-                @endcan
+                <div class="mt-2 flex gap-2">
+                    @can('updateMember', [$tenant, $member])
+                        <form method="POST" action="{{ route('tenants.members.update', [$tenant, $member]) }}">
+                            @csrf
+                            @method('PATCH')
+                            <input type="hidden" name="role" value="{{ \App\Models\Tenant::ADMIN_ROLE }}">
+                            <button type="submit" class="inline-block px-5 py-1.5 border border-[#19140035] rounded-sm text-sm leading-normal hover:bg-[#19140012]">
+                                昇格
+                            </button>
+                        </form>
+                    @endcan
+
+                    @can('removeMember', [$tenant, $member])
+                        <form method="POST" action="{{ route('tenants.members.destroy', [$tenant, $member]) }}" onsubmit="return confirm('このメンバーをテナントから脱退させますか?')">
+                            @csrf
+                            @method('DELETE')
+                            <button type="submit" class="inline-block px-5 py-1.5 border border-[#19140035] rounded-sm text-sm leading-normal hover:bg-[#19140012]">
+                                脱退
+                            </button>
+                        </form>
+                    @endcan
+                </div>
             </div>
         @empty
             <p class="mb-2 text-sm text-[#706f6c]">メンバーはいません。</p>

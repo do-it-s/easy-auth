@@ -59,12 +59,23 @@ class TenantMemberController extends Controller
     /**
      * Remove a member from the tenant.
      *
-     * @todo WBS 4.1/4.2: 自主脱退・強制脱退
+     * @todo WBS 4.1: 自主脱退
      */
     public function destroy(Tenant $tenant, User $user): RedirectResponse
     {
         $this->authorize('removeMember', [$tenant, $user]);
 
-        abort(501);
+        abort_unless($tenant->hasMember($user), 404);
+
+        if ($tenant->isAdministeredBy($user)) {
+            $adminCount = $tenant->users()->wherePivot('role', Tenant::ADMIN_ROLE)->count();
+            if ($adminCount <= 1) {
+                return back()->withErrors(['role' => '最後の管理者は脱退させられません。']);
+            }
+        }
+
+        $tenant->users()->detach($user);
+
+        return redirect()->route('tenants.members.index', $tenant);
     }
 }
