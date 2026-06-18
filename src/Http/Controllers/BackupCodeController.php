@@ -1,9 +1,9 @@
 <?php
 
-namespace App\Http\Controllers;
+namespace DoITs\EasyAuth\Http\Controllers;
 
-use App\Models\Invitation;
-use App\Models\Tenant;
+use DoITs\EasyAuth\Models\Invitation;
+use DoITs\EasyAuth\Models\Tenant;
 use Endroid\QrCode\Builder\Builder;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\RedirectResponse;
@@ -20,7 +20,7 @@ class BackupCodeController extends Controller
 
         $invitationUrl = session('invitation_url');
 
-        return view('tenants.backup-code.show', [
+        return view('easy-auth::tenants.backup-code.show', [
             'tenant' => $tenant,
             'hasUsableBackupCode' => $tenant->hasUsableBackupCode(),
             'invitationUrl' => $invitationUrl,

@@ -1,8 +1,8 @@
 <?php
 
-namespace App\Http\Controllers\Auth;
+namespace DoITs\EasyAuth\Http\Controllers\Auth;
 
-use App\Http\Controllers\Controller;
+use DoITs\EasyAuth\Http\Controllers\Controller;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;

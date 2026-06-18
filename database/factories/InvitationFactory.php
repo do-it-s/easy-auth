@@ -2,9 +2,8 @@
 
 namespace Database\Factories;
 
-use App\Models\Invitation;
-use App\Models\Tenant;
-use App\Models\User;
+use DoITs\EasyAuth\Models\Invitation;
+use DoITs\EasyAuth\Models\Tenant;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**
@@ -19,13 +18,15 @@ class InvitationFactory extends Factory
      */
     public function definition(): array
     {
+        $userModel = config('auth.providers.users.model');
+
         return [
             'tenant_id' => Tenant::factory(),
             'role' => Tenant::MEMBER_ROLE,
             'token' => Invitation::hashToken(Invitation::generateToken()),
             'label' => null,
             'expires_at' => now()->addWeek(),
-            'created_by' => User::factory(),
+            'created_by' => $userModel::factory(),
         ];
     }
 
@@ -67,9 +68,11 @@ class InvitationFactory extends Factory
      */
     public function used(): static
     {
+        $userModel = config('auth.providers.users.model');
+
         return $this->state(fn (array $attributes) => [
             'used_at' => now(),
-            'redeemed_by' => User::factory(),
+            'redeemed_by' => $userModel::factory(),
         ]);
     }
 

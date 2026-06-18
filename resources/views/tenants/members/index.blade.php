@@ -24,7 +24,7 @@
                             <form method="POST" action="{{ route('tenants.members.update', [$tenant, $member]) }}">
                                 @csrf
                                 @method('PATCH')
-                                <input type="hidden" name="role" value="{{ \App\Models\Tenant::MEMBER_ROLE }}">
+                                <input type="hidden" name="role" value="{{ \DoITs\EasyAuth\Models\Tenant::MEMBER_ROLE }}">
                                 <button type="submit" class="inline-block px-5 py-1.5 border border-[#19140035] rounded-sm text-sm leading-normal hover:bg-[#19140012]">
                                     降格
                                 </button>
@@ -62,7 +62,7 @@
                         <form method="POST" action="{{ route('tenants.members.update', [$tenant, $member]) }}">
                             @csrf
                             @method('PATCH')
-                            <input type="hidden" name="role" value="{{ \App\Models\Tenant::ADMIN_ROLE }}">
+                            <input type="hidden" name="role" value="{{ \DoITs\EasyAuth\Models\Tenant::ADMIN_ROLE }}">
                             <button type="submit" class="inline-block px-5 py-1.5 border border-[#19140035] rounded-sm text-sm leading-normal hover:bg-[#19140012]">
                                 昇格
                             </button>

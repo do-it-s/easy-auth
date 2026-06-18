@@ -1,9 +1,9 @@
 <?php
 
-namespace App\Actions;
+namespace DoITs\EasyAuth\Actions;
 
-use App\Models\Invitation;
-use App\Models\User;
+use DoITs\EasyAuth\Contracts\EasyAuthUser;
+use DoITs\EasyAuth\Models\Invitation;
 use Illuminate\Http\Request;
 
 class RedeemPendingInvitation
@@ -17,7 +17,7 @@ class RedeemPendingInvitation
      * redeemed invitation, if any, so callers can react to it (e.g. an
      * administrator backup code being consumed).
      */
-    public function __invoke(Request $request, User $user): ?Invitation
+    public function __invoke(Request $request, EasyAuthUser $user): ?Invitation
     {
         $token = $request->session()->pull('pending_invitation_token');
 

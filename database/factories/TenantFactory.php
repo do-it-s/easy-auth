@@ -2,7 +2,7 @@
 
 namespace Database\Factories;
 
-use App\Models\Tenant;
+use DoITs\EasyAuth\Models\Tenant;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**

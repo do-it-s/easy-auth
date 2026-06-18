@@ -1,20 +1,18 @@
 <?php
 
-use App\Http\Controllers\Auth\LoginController;
-use App\Http\Controllers\Auth\LogoutController;
-use App\Http\Controllers\Auth\RegisterController;
-use App\Http\Controllers\BackupCodeController;
-use App\Http\Controllers\InvitationController;
-use App\Http\Controllers\InvitationRedemptionController;
-use App\Http\Controllers\ProfileController;
-use App\Http\Controllers\TenantController;
-use App\Http\Controllers\TenantMemberController;
-use App\Http\Controllers\TenantSwitchController;
+use DoITs\EasyAuth\Http\Controllers\Auth\LoginController;
+use DoITs\EasyAuth\Http\Controllers\Auth\LogoutController;
+use DoITs\EasyAuth\Http\Controllers\Auth\RegisterController;
+use DoITs\EasyAuth\Http\Controllers\BackupCodeController;
+use DoITs\EasyAuth\Http\Controllers\InvitationController;
+use DoITs\EasyAuth\Http\Controllers\InvitationRedemptionController;
+use DoITs\EasyAuth\Http\Controllers\ProfileController;
+use DoITs\EasyAuth\Http\Controllers\TenantController;
+use DoITs\EasyAuth\Http\Controllers\TenantMemberController;
+use DoITs\EasyAuth\Http\Controllers\TenantSwitchController;
 use Illuminate\Support\Facades\Route;
 
-Route::view('/', 'home')->name('home');
-
-Route::view('/device/reset', 'device.reset')->name('device.reset');
+Route::view('/device/reset', 'easy-auth::device.reset')->name('device.reset');
 
 Route::post('/logout', LogoutController::class)->middleware('auth')->name('logout');
 

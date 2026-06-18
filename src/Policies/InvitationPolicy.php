@@ -1,17 +1,17 @@
 <?php
 
-namespace App\Policies;
+namespace DoITs\EasyAuth\Policies;
 
-use App\Models\Invitation;
-use App\Models\Tenant;
-use App\Models\User;
+use DoITs\EasyAuth\Contracts\EasyAuthUser;
+use DoITs\EasyAuth\Models\Invitation;
+use DoITs\EasyAuth\Models\Tenant;
 
 class InvitationPolicy
 {
     /**
      * Determine whether the user can view the tenant's invitations.
      */
-    public function viewAny(User $user, Tenant $tenant): bool
+    public function viewAny(EasyAuthUser $user, Tenant $tenant): bool
     {
         return $tenant->isAdministeredBy($user);
     }
@@ -19,7 +19,7 @@ class InvitationPolicy
     /**
      * Determine whether the user can create invitations for the tenant.
      */
-    public function create(User $user, Tenant $tenant): bool
+    public function create(EasyAuthUser $user, Tenant $tenant): bool
     {
         return $tenant->isAdministeredBy($user)
             || ($tenant->member_invites_enabled && $tenant->hasMember($user));
@@ -28,7 +28,7 @@ class InvitationPolicy
     /**
      * Determine whether the user can revoke the invitation.
      */
-    public function delete(User $user, Invitation $invitation): bool
+    public function delete(EasyAuthUser $user, Invitation $invitation): bool
     {
         return ! $invitation->is_backup_code
             && $invitation->tenant->isAdministeredBy($user);

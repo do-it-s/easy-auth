@@ -1,9 +1,9 @@
 <?php
 
-namespace App\Http\Controllers;
+namespace DoITs\EasyAuth\Http\Controllers;
 
-use App\Models\Invitation;
-use App\Models\Tenant;
+use DoITs\EasyAuth\Models\Invitation;
+use DoITs\EasyAuth\Models\Tenant;
 use Endroid\QrCode\Builder\Builder;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\RedirectResponse;
@@ -19,7 +19,7 @@ class InvitationController extends Controller
     {
         $this->authorize('viewAny', [Invitation::class, $tenant]);
 
-        return view('tenants.invitations.index', [
+        return view('easy-auth::tenants.invitations.index', [
             'tenant' => $tenant,
             'invitations' => $tenant->invitations()->where('is_backup_code', false)->latest()->get(),
         ]);
@@ -34,7 +34,7 @@ class InvitationController extends Controller
 
         $invitationUrl = session('invitation_url');
 
-        return view('tenants.invitations.create', [
+        return view('easy-auth::tenants.invitations.create', [
             'tenant' => $tenant,
             'isAdmin' => $tenant->isAdministeredBy(request()->user()),
             'invitationUrl' => $invitationUrl,

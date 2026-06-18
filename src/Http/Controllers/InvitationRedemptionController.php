@@ -1,9 +1,9 @@
 <?php
 
-namespace App\Http\Controllers;
+namespace DoITs\EasyAuth\Http\Controllers;
 
-use App\Models\Invitation;
-use App\Models\Tenant;
+use DoITs\EasyAuth\Models\Invitation;
+use DoITs\EasyAuth\Models\Tenant;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -18,7 +18,7 @@ class InvitationRedemptionController extends Controller
         $invitation = Invitation::where('token', Invitation::hashToken($token))->first();
 
         if (! $invitation || ! $invitation->isUsable()) {
-            return view('invitations.show', [
+            return view('easy-auth::invitations.show', [
                 'status' => 'invalid',
                 'invitation' => null,
             ]);
@@ -33,13 +33,13 @@ class InvitationRedemptionController extends Controller
         }
 
         if (! $invitation->canBeRedeemedBy($user)) {
-            return view('invitations.show', [
+            return view('easy-auth::invitations.show', [
                 'status' => 'already_admin',
                 'invitation' => $invitation,
             ]);
         }
 
-        return view('invitations.show', [
+        return view('easy-auth::invitations.show', [
             'status' => 'confirm',
             'invitation' => $invitation,
             'token' => $token,
@@ -56,7 +56,7 @@ class InvitationRedemptionController extends Controller
         $invitation = Invitation::where('token', Invitation::hashToken($token))->first();
 
         if (! $invitation || ! $invitation->isUsable()) {
-            return view('invitations.show', [
+            return view('easy-auth::invitations.show', [
                 'status' => 'invalid',
                 'invitation' => null,
             ]);
@@ -65,7 +65,7 @@ class InvitationRedemptionController extends Controller
         $user = $request->user();
 
         if (! $invitation->canBeRedeemedBy($user)) {
-            return view('invitations.show', [
+            return view('easy-auth::invitations.show', [
                 'status' => 'already_admin',
                 'invitation' => $invitation,
             ]);

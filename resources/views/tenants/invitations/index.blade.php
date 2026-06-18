@@ -8,9 +8,9 @@
             <div class="mb-2 p-3 border border-[#19140035] rounded-sm text-sm">
                 <p>
                     ロール:
-                    @if ($invitation->role === \App\Models\Tenant::ADMIN_ROLE)
+                    @if ($invitation->role === \DoITs\EasyAuth\Models\Tenant::ADMIN_ROLE)
                         管理者
-                    @elseif ($invitation->role === \App\Models\Tenant::MEMBER_ROLE)
+                    @elseif ($invitation->role === \DoITs\EasyAuth\Models\Tenant::MEMBER_ROLE)
                         メンバー
                     @else
                         {{ $invitation->role }}

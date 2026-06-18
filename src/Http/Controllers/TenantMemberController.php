@@ -1,9 +1,9 @@
 <?php
 
-namespace App\Http\Controllers;
+namespace DoITs\EasyAuth\Http\Controllers;
 
-use App\Models\Tenant;
-use App\Models\User;
+use DoITs\EasyAuth\Contracts\EasyAuthUser;
+use DoITs\EasyAuth\Models\Tenant;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -23,7 +23,7 @@ class TenantMemberController extends Controller
             ->get()
             ->partition(fn ($member) => $member->pivot->role === Tenant::ADMIN_ROLE);
 
-        return view('tenants.members.index', [
+        return view('easy-auth::tenants.members.index', [
             'tenant' => $tenant,
             'admins' => $admins,
             'others' => $others,
@@ -34,7 +34,7 @@ class TenantMemberController extends Controller
     /**
      * Update a member's role within the tenant.
      */
-    public function update(Request $request, Tenant $tenant, User $user): RedirectResponse
+    public function update(Request $request, Tenant $tenant, EasyAuthUser $user): RedirectResponse
     {
         $this->authorize('updateMember', [$tenant, $user]);
 
@@ -59,7 +59,7 @@ class TenantMemberController extends Controller
     /**
      * Remove a member from the tenant.
      */
-    public function destroy(Tenant $tenant, User $user): RedirectResponse
+    public function destroy(Tenant $tenant, EasyAuthUser $user): RedirectResponse
     {
         $this->authorize('removeMember', [$tenant, $user]);
 

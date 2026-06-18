@@ -1,8 +1,9 @@
 <?php
 
-namespace App\Models;
+namespace DoITs\EasyAuth\Models;
 
 use Database\Factories\InvitationFactory;
+use DoITs\EasyAuth\Contracts\EasyAuthUser;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -12,7 +13,6 @@ use Illuminate\Support\Str;
 #[Fillable(['tenant_id', 'role', 'token', 'label', 'expires_at', 'created_by', 'used_at', 'redeemed_by', 'is_backup_code'])]
 class Invitation extends Model
 {
-    /** @use HasFactory<InvitationFactory> */
     use HasFactory;
 
     /**
@@ -45,21 +45,21 @@ class Invitation extends Model
     /**
      * The user who created this invitation.
      *
-     * @return BelongsTo<User, $this>
+     * @return BelongsTo<EasyAuthUser, $this>
      */
     public function creator(): BelongsTo
     {
-        return $this->belongsTo(User::class, 'created_by');
+        return $this->belongsTo(config('auth.providers.users.model'), 'created_by');
     }
 
     /**
      * The user who redeemed this invitation.
      *
-     * @return BelongsTo<User, $this>
+     * @return BelongsTo<EasyAuthUser, $this>
      */
     public function redeemer(): BelongsTo
     {
-        return $this->belongsTo(User::class, 'redeemed_by');
+        return $this->belongsTo(config('auth.providers.users.model'), 'redeemed_by');
     }
 
     /**
@@ -101,7 +101,7 @@ class Invitation extends Model
      * that does not downgrade their role (i.e. an administrator cannot
      * redeem a member-role invitation).
      */
-    public function canBeRedeemedBy(User $user): bool
+    public function canBeRedeemedBy(EasyAuthUser $user): bool
     {
         if (! $this->tenant->hasMember($user)) {
             return true;
@@ -115,7 +115,7 @@ class Invitation extends Model
      * (or promote them to it, if already a member), and mark the
      * invitation as used.
      */
-    public function redeemFor(User $user): void
+    public function redeemFor(EasyAuthUser $user): void
     {
         if ($this->tenant->hasMember($user)) {
             $this->tenant->users()->updateExistingPivot($user, [
@@ -133,5 +133,13 @@ class Invitation extends Model
             'used_at' => now(),
             'redeemed_by' => $user->id,
         ]);
+    }
+
+    /**
+     * @return InvitationFactory
+     */
+    protected static function newFactory()
+    {
+        return InvitationFactory::new();
     }
 }

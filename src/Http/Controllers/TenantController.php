@@ -1,8 +1,8 @@
 <?php
 
-namespace App\Http\Controllers;
+namespace DoITs\EasyAuth\Http\Controllers;
 
-use App\Models\Tenant;
+use DoITs\EasyAuth\Models\Tenant;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -22,7 +22,7 @@ class TenantController extends Controller
      */
     public function create(): View
     {
-        return view('tenants.create');
+        return view('easy-auth::tenants.create');
     }
 
     /**
@@ -59,7 +59,7 @@ class TenantController extends Controller
     {
         $this->authorize('update', $tenant);
 
-        return view('tenants.edit', [
+        return view('easy-auth::tenants.edit', [
             'tenant' => $tenant,
         ]);
     }

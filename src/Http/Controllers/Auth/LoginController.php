@@ -1,8 +1,8 @@
 <?php
 
-namespace App\Http\Controllers\Auth;
+namespace DoITs\EasyAuth\Http\Controllers\Auth;
 
-use App\Http\Controllers\Controller;
+use DoITs\EasyAuth\Http\Controllers\Controller;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
@@ -17,7 +17,7 @@ class LoginController extends Controller
      */
     public function create(): View
     {
-        return view('auth.login');
+        return view('easy-auth::auth.login');
     }
 
     /**

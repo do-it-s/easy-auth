@@ -1,9 +1,8 @@
 <?php
 
-namespace App\Http\Controllers;
+namespace DoITs\EasyAuth\Http\Controllers;
 
-use App\Actions\RedeemPendingInvitation;
-use App\Models\User;
+use DoITs\EasyAuth\Actions\RedeemPendingInvitation;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
@@ -24,7 +23,7 @@ class ProfileController extends Controller
      */
     public function create(): View
     {
-        return view('profile.create');
+        return view('easy-auth::profile.create');
     }
 
     /**
@@ -32,7 +31,9 @@ class ProfileController extends Controller
      */
     public function passkeyOptions(Request $request, GenerateRegistrationOptions $generate): JsonResponse
     {
-        $options = $generate(new User(['name' => '']));
+        $userModel = config('auth.providers.users.model');
+
+        $options = $generate(new $userModel(['name' => '']));
 
         $request->session()->put('passkey.registration_options', WebAuthn::toJson($options));
 
@@ -46,7 +47,9 @@ class ProfileController extends Controller
      */
     public function store(PasskeyRegistrationRequest $request, StorePasskey $storePasskey, RedeemPendingInvitation $redeemPendingInvitation): Response
     {
-        $user = User::create(['name' => '']);
+        $userModel = config('auth.providers.users.model');
+
+        $user = $userModel::create(['name' => '']);
 
         $passkey = $storePasskey(
             $user,
@@ -79,7 +82,7 @@ class ProfileController extends Controller
      */
     public function edit(Request $request): View
     {
-        return view('profile.edit', [
+        return view('easy-auth::profile.edit', [
             'user' => $request->user(),
             'currentTenant' => $request->user()->currentTenant(),
         ]);

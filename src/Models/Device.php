@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Models;
+namespace DoITs\EasyAuth\Models;
 
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Model;
@@ -12,10 +12,10 @@ class Device extends Model
     /**
      * The user this device belongs to.
      *
-     * @return BelongsTo<User, $this>
+     * @return BelongsTo<\DoITs\EasyAuth\Contracts\EasyAuthUser, $this>
      */
     public function user(): BelongsTo
     {
-        return $this->belongsTo(User::class);
+        return $this->belongsTo(config('auth.providers.users.model'));
     }
 }

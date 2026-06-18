@@ -23,7 +23,7 @@
         <form method="POST" action="{{ route('tenants.invitations.store', $tenant) }}">
             @csrf
 
-            <input type="hidden" name="role" value="{{ \App\Models\Tenant::MEMBER_ROLE }}">
+            <input type="hidden" name="role" value="{{ \DoITs\EasyAuth\Models\Tenant::MEMBER_ROLE }}">
 
             <label for="label" class="block mb-1 text-sm">メモ（任意）</label>
 
@@ -50,8 +50,8 @@
                     <input
                         type="checkbox"
                         name="role"
-                        value="{{ \App\Models\Tenant::ADMIN_ROLE }}"
-                        @checked(old('role') === \App\Models\Tenant::ADMIN_ROLE)
+                        value="{{ \DoITs\EasyAuth\Models\Tenant::ADMIN_ROLE }}"
+                        @checked(old('role') === \DoITs\EasyAuth\Models\Tenant::ADMIN_ROLE)
                     >
                     管理者として招待
                 </label>

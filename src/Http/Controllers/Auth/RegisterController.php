@@ -1,10 +1,9 @@
 <?php
 
-namespace App\Http\Controllers\Auth;
+namespace DoITs\EasyAuth\Http\Controllers\Auth;
 
-use App\Actions\RedeemPendingInvitation;
-use App\Http\Controllers\Controller;
-use App\Models\User;
+use DoITs\EasyAuth\Actions\RedeemPendingInvitation;
+use DoITs\EasyAuth\Http\Controllers\Controller;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -25,7 +24,9 @@ class RegisterController extends Controller
             'password' => ['required', 'confirmed', Password::defaults()],
         ]);
 
-        $user = User::create([
+        $userModel = config('auth.providers.users.model');
+
+        $user = $userModel::create([
             'name' => $validated['name'],
             'email' => $validated['email'],
             'password' => $validated['password'],

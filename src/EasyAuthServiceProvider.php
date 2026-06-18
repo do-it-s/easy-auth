@@ -1,33 +1,43 @@
 <?php
 
-namespace App\Providers;
+namespace DoITs\EasyAuth;
 
-use App\Models\Invitation;
-use App\Models\Tenant;
-use App\Models\User;
-use App\Policies\InvitationPolicy;
-use App\Policies\TenantPolicy;
+use DoITs\EasyAuth\Contracts\EasyAuthUser;
+use DoITs\EasyAuth\Http\Middleware\EnsureProfileIsComplete;
+use DoITs\EasyAuth\Models\Invitation;
+use DoITs\EasyAuth\Models\Tenant;
+use DoITs\EasyAuth\Policies\InvitationPolicy;
+use DoITs\EasyAuth\Policies\TenantPolicy;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
+use Illuminate\Support\Facades\Route;
 use Illuminate\Support\ServiceProvider;
 use Laravel\Passkeys\Passkeys;
 
-class AppServiceProvider extends ServiceProvider
+class EasyAuthServiceProvider extends ServiceProvider
 {
     /**
-     * Register any application services.
-     */
-    public function register(): void
-    {
-        //
-    }
-
-    /**
-     * Bootstrap any application services.
+     * Bootstrap any package services.
      */
     public function boot(): void
     {
-        Passkeys::authorizeLoginUsing(function (Request $request, User $user): bool {
+        $this->loadMigrationsFrom(__DIR__.'/../database/migrations');
+        $this->loadViewsFrom(__DIR__.'/../resources/views', 'easy-auth');
+        $this->loadRoutesFrom(__DIR__.'/../routes/web.php');
+
+        $this->app['router']->aliasMiddleware('profile.complete', EnsureProfileIsComplete::class);
+
+        // The host application owns its own User model (see Contracts\EasyAuthUser
+        // and Concerns\IsEasyAuthUser), so {user} route parameters must be resolved
+        // against the configured auth model explicitly rather than relying on
+        // implicit, type-hint-based route model binding.
+        Route::bind('user', function (string $value): EasyAuthUser {
+            $userModel = config('auth.providers.users.model');
+
+            return $userModel::findOrFail($value);
+        });
+
+        Passkeys::authorizeLoginUsing(function (Request $request, EasyAuthUser $user): bool {
             return $user->device?->uuid === $request->header('X-Device-Uuid');
         });
 
