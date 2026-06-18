@@ -1,6 +1,6 @@
 <?php
 
-use App\Models\User;
+use DoITs\EasyAuth\Tests\Fixtures\User;
 use Illuminate\Support\Str;
 
 test('a user can log in with the correct email and password', function () {

@@ -1,7 +1,7 @@
 <?php
 
-use App\Models\Tenant;
-use App\Models\User;
+use DoITs\EasyAuth\Models\Tenant;
+use DoITs\EasyAuth\Tests\Fixtures\User;
 
 test('profile edit page shows the leave section for the current tenant', function () {
     $user = User::factory()->create(['name' => 'メンバー']);

@@ -1,8 +1,8 @@
 <?php
 
-use App\Models\Invitation;
-use App\Models\Tenant;
-use App\Models\User;
+use DoITs\EasyAuth\Models\Invitation;
+use DoITs\EasyAuth\Models\Tenant;
+use DoITs\EasyAuth\Tests\Fixtures\User;
 
 function attachTenantMember(Tenant $tenant, User $user, string $role): void
 {

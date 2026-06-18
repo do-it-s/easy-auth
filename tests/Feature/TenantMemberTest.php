@@ -1,7 +1,7 @@
 <?php
 
-use App\Models\Tenant;
-use App\Models\User;
+use DoITs\EasyAuth\Models\Tenant;
+use DoITs\EasyAuth\Tests\Fixtures\User;
 
 test('admin can view the member list', function () {
     $admin = User::factory()->create(['name' => '管理者']);
