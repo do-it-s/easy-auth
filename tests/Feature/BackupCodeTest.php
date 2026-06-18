@@ -67,10 +67,10 @@ test('creating a tenant redirects to the backup code page', function () {
     $user = User::factory()->create();
 
     $response = $this->actingAs($user)->post(route('tenants.store'), [
-        'name' => '新しいテナント',
+        'name' => 'New Tenant',
     ]);
 
-    $tenant = Tenant::where('name', '新しいテナント')->first();
+    $tenant = Tenant::where('name', 'New Tenant')->first();
 
     $response->assertRedirect(route('tenants.backup-code.show', $tenant));
 });
@@ -137,8 +137,8 @@ test('backup codes do not appear in the invitation list', function () {
 
     $response = $this->actingAs($admin)->get(route('tenants.invitations.index', $tenant));
 
-    $response->assertSee($regular->label ?? 'メンバー');
-    $response->assertDontSee('緊急用バックアップコード');
+    $response->assertSee($regular->label ?? 'member');
+    $response->assertDontSee('Emergency backup code');
 });
 
 test('a backup code cannot be revoked through the invitation list', function () {

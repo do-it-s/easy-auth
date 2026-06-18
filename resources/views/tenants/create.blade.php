@@ -2,7 +2,7 @@
 
 @section('content')
     <div class="w-full max-w-sm">
-        <h1 class="mb-4 text-lg">テナントを作成</h1>
+        <h1 class="mb-4 text-lg">{{ __('easy-auth::tenants.create_heading') }}</h1>
 
         @error('name')
             <p class="mb-4 text-[#F53003]">{{ $message }}</p>
@@ -11,7 +11,7 @@
         <form method="POST" action="{{ route('tenants.store') }}">
             @csrf
 
-            <label for="name" class="block mb-1 text-sm">テナント名</label>
+            <label for="name" class="block mb-1 text-sm">{{ __('easy-auth::tenants.name') }}</label>
 
             <input
                 id="name"
@@ -25,7 +25,7 @@
                 type="submit"
                 class="inline-block px-5 py-1.5 border border-[#19140035] hover:border-[#19140035] rounded-sm text-sm leading-normal"
             >
-                追加
+                {{ __('easy-auth::tenants.add') }}
             </button>
         </form>
     </div>

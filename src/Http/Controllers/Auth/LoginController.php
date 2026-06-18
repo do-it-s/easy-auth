@@ -32,7 +32,7 @@ class LoginController extends Controller
 
         if (! Auth::attempt($credentials)) {
             throw ValidationException::withMessages([
-                'email' => 'メールアドレス、パスワード、またはこの端末の情報が前回と一致しないため、ログインできません。',
+                'email' => __('easy-auth::auth.login_failed'),
             ]);
         }
 
@@ -42,7 +42,7 @@ class LoginController extends Controller
             Auth::logout();
 
             throw ValidationException::withMessages([
-                'email' => 'メールアドレス、パスワード、またはこの端末の情報が前回と一致しないため、ログインできません。',
+                'email' => __('easy-auth::auth.login_failed'),
             ]);
         }
 

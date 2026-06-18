@@ -47,7 +47,7 @@ class BackupCodeController extends Controller
         $tenant->invitations()->create([
             'role' => Tenant::ADMIN_ROLE,
             'token' => Invitation::hashToken($token),
-            'label' => '緊急用バックアップコード',
+            'label' => __('easy-auth::backup_code.emergency_label'),
             'expires_at' => null,
             'is_backup_code' => true,
             'created_by' => $request->user()->id,

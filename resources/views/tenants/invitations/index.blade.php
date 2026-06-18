@@ -2,38 +2,38 @@
 
 @section('content')
     <div class="w-full max-w-md">
-        <h1 class="mb-4 text-lg">{{ $tenant->name }} の招待一覧</h1>
+        <h1 class="mb-4 text-lg">{{ __('easy-auth::invitations.index_heading', ['tenant' => $tenant->name]) }}</h1>
 
         @forelse ($invitations as $invitation)
             <div class="mb-2 p-3 border border-[#19140035] rounded-sm text-sm">
                 <p>
-                    ロール:
+                    {{ __('easy-auth::invitations.role_label') }}
                     @if ($invitation->role === \DoITs\EasyAuth\Models\Tenant::ADMIN_ROLE)
-                        管理者
+                        {{ __('easy-auth::invitations.role_admin') }}
                     @elseif ($invitation->role === \DoITs\EasyAuth\Models\Tenant::MEMBER_ROLE)
-                        メンバー
+                        {{ __('easy-auth::invitations.role_member') }}
                     @else
                         {{ $invitation->role }}
                     @endif
                 </p>
 
                 @if ($invitation->label)
-                    <p>メモ: {{ $invitation->label }}</p>
+                    <p>{{ __('easy-auth::invitations.note_label', ['label' => $invitation->label]) }}</p>
                 @endif
 
                 <p>
-                    有効期限:
-                    {{ $invitation->expires_at?->format('Y-m-d H:i') ?? '無期限' }}
+                    {{ __('easy-auth::invitations.expires_label') }}
+                    {{ $invitation->expires_at?->format('Y-m-d H:i') ?? __('easy-auth::invitations.no_expiration') }}
                 </p>
 
                 <p>
-                    状態:
+                    {{ __('easy-auth::invitations.status_label') }}
                     @if ($invitation->isUsed())
-                        使用済み
+                        {{ __('easy-auth::invitations.status_used') }}
                     @elseif ($invitation->isExpired())
-                        期限切れ
+                        {{ __('easy-auth::invitations.status_expired') }}
                     @else
-                        有効
+                        {{ __('easy-auth::invitations.status_active') }}
                     @endif
                 </p>
 
@@ -47,14 +47,14 @@
                                 type="submit"
                                 class="inline-block px-5 py-1.5 border border-[#19140035] hover:border-[#19140035] rounded-sm text-sm leading-normal"
                             >
-                                無効化
+                                {{ __('easy-auth::invitations.revoke') }}
                             </button>
                         </form>
                     @endif
                 @endcan
             </div>
         @empty
-            <p class="text-sm">招待はまだありません。</p>
+            <p class="text-sm">{{ __('easy-auth::invitations.none_yet') }}</p>
         @endforelse
     </div>
 @endsection

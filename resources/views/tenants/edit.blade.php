@@ -2,7 +2,7 @@
 
 @section('content')
     <div class="w-full max-w-sm">
-        <h1 class="mb-4 text-lg">テナント設定</h1>
+        <h1 class="mb-4 text-lg">{{ __('easy-auth::tenants.edit_heading') }}</h1>
 
         @error('name')
             <p class="mb-4 text-[#F53003]">{{ $message }}</p>
@@ -12,7 +12,7 @@
             @csrf
             @method('PATCH')
 
-            <label for="name" class="block mb-1 text-sm">テナント名</label>
+            <label for="name" class="block mb-1 text-sm">{{ __('easy-auth::tenants.name') }}</label>
 
             <input
                 id="name"
@@ -29,14 +29,14 @@
                     value="1"
                     @checked(old('member_invites_enabled', $tenant->member_invites_enabled))
                 >
-                メンバーが他の人を招待できるようにする
+                {{ __('easy-auth::tenants.member_invites_enabled') }}
             </label>
 
             <button
                 type="submit"
                 class="inline-block px-5 py-1.5 border border-[#19140035] hover:border-[#19140035] rounded-sm text-sm leading-normal"
             >
-                保存
+                {{ __('easy-auth::tenants.save') }}
             </button>
         </form>
     </div>

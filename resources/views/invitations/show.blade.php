@@ -3,15 +3,15 @@
 @section('content')
     <div class="w-full max-w-sm text-center">
         @if ($status === 'invalid')
-            <p class="mb-4">この招待は無効です（期限切れまたは使用済み）。</p>
+            <p class="mb-4">{{ __('easy-auth::invitations.invalid') }}</p>
         @elseif ($status === 'already_admin')
-            <p class="mb-4">すでに「{{ $invitation->tenant->name }}」の管理者です。</p>
+            <p class="mb-4">{{ __('easy-auth::invitations.already_admin', ['tenant' => $invitation->tenant->name]) }}</p>
         @elseif ($alreadyMember)
             <p class="mb-4">
                 @if ($isPromotion)
-                    「{{ $invitation->tenant->name }}」の管理者に昇格しますか？
+                    {{ __('easy-auth::invitations.promote_confirm', ['tenant' => $invitation->tenant->name]) }}
                 @else
-                    「{{ $invitation->tenant->name }}」での参加情報を更新しますか？
+                    {{ __('easy-auth::invitations.refresh_confirm', ['tenant' => $invitation->tenant->name]) }}
                 @endif
             </p>
 
@@ -22,20 +22,19 @@
                     type="submit"
                     class="inline-block px-5 py-1.5 border border-[#19140035] hover:border-[#19140035] rounded-sm text-sm leading-normal"
                 >
-                    {{ $isPromotion ? '昇格する' : '更新する' }}
+                    {{ $isPromotion ? __('easy-auth::invitations.promote_button') : __('easy-auth::invitations.refresh_button') }}
                 </button>
             </form>
         @else
+            @php
+                $roleLabel = match ($invitation->role) {
+                    \DoITs\EasyAuth\Models\Tenant::ADMIN_ROLE => __('easy-auth::invitations.role_admin'),
+                    \DoITs\EasyAuth\Models\Tenant::MEMBER_ROLE => __('easy-auth::invitations.role_member'),
+                    default => $invitation->role,
+                };
+            @endphp
             <p class="mb-4">
-                「{{ $invitation->tenant->name }}」に
-                @if ($invitation->role === \DoITs\EasyAuth\Models\Tenant::ADMIN_ROLE)
-                    管理者
-                @elseif ($invitation->role === \DoITs\EasyAuth\Models\Tenant::MEMBER_ROLE)
-                    メンバー
-                @else
-                    {{ $invitation->role }}
-                @endif
-                として参加しますか？
+                {{ __('easy-auth::invitations.join_prompt', ['tenant' => $invitation->tenant->name, 'role' => $roleLabel]) }}
             </p>
 
             <form method="POST" action="{{ route('invitations.redeem', $token) }}">
@@ -45,7 +44,7 @@
                     type="submit"
                     class="inline-block px-5 py-1.5 border border-[#19140035] hover:border-[#19140035] rounded-sm text-sm leading-normal"
                 >
-                    参加する
+                    {{ __('easy-auth::invitations.join_button') }}
                 </button>
             </form>
         @endif

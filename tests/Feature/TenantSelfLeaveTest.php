@@ -4,32 +4,32 @@ use DoITs\EasyAuth\Models\Tenant;
 use DoITs\EasyAuth\Tests\Fixtures\User;
 
 test('profile edit page shows the leave section for the current tenant', function () {
-    $user = User::factory()->create(['name' => 'メンバー']);
-    $tenant = Tenant::factory()->create(['name' => '現在のテナント']);
+    $user = User::factory()->create(['name' => 'Member']);
+    $tenant = Tenant::factory()->create(['name' => 'Current Tenant']);
     $tenant->users()->attach($user, ['role' => Tenant::MEMBER_ROLE, 'last_accessed_at' => now()]);
 
     $response = $this->actingAs($user)->get(route('profile.edit'));
 
     $response->assertOk();
-    $response->assertSee('現在のテナントを脱退するには名前を入力してください');
+    $response->assertSee('Type your name to leave Current Tenant');
 });
 
 test('profile edit page hides the leave section when the user has no tenant', function () {
-    $user = User::factory()->create(['name' => 'メンバー']);
+    $user = User::factory()->create(['name' => 'Member']);
 
     $response = $this->actingAs($user)->get(route('profile.edit'));
 
     $response->assertOk();
-    $response->assertDontSee('を脱退するには名前を入力してください', false);
+    $response->assertDontSee('Type your name to leave', false);
 });
 
 test('member can leave the tenant when the typed name matches', function () {
-    $user = User::factory()->create(['name' => 'メンバー']);
+    $user = User::factory()->create(['name' => 'Member']);
     $tenant = Tenant::factory()->create();
     $tenant->users()->attach($user, ['role' => Tenant::MEMBER_ROLE, 'last_accessed_at' => now()]);
 
     $response = $this->actingAs($user)->delete(route('tenants.members.leave', $tenant), [
-        'name' => 'メンバー',
+        'name' => 'Member',
     ]);
 
     $response->assertRedirect(route('profile.edit'));
@@ -37,12 +37,12 @@ test('member can leave the tenant when the typed name matches', function () {
 });
 
 test('member cannot leave when the typed name does not match', function () {
-    $user = User::factory()->create(['name' => 'メンバー']);
+    $user = User::factory()->create(['name' => 'Member']);
     $tenant = Tenant::factory()->create();
     $tenant->users()->attach($user, ['role' => Tenant::MEMBER_ROLE, 'last_accessed_at' => now()]);
 
     $response = $this->actingAs($user)->delete(route('tenants.members.leave', $tenant), [
-        'name' => '違う名前',
+        'name' => 'Wrong Name',
     ]);
 
     $response->assertRedirect();
@@ -51,15 +51,15 @@ test('member cannot leave when the typed name does not match', function () {
 });
 
 test('admin can leave when other admins exist', function () {
-    $admin1 = User::factory()->create(['name' => '管理者1']);
-    $admin2 = User::factory()->create(['name' => '管理者2']);
+    $admin1 = User::factory()->create(['name' => 'Admin1']);
+    $admin2 = User::factory()->create(['name' => 'Admin2']);
     $tenant = Tenant::factory()->create();
 
     $tenant->users()->attach($admin1, ['role' => Tenant::ADMIN_ROLE, 'last_accessed_at' => now()]);
     $tenant->users()->attach($admin2, ['role' => Tenant::ADMIN_ROLE, 'last_accessed_at' => now()]);
 
     $response = $this->actingAs($admin1)->delete(route('tenants.members.leave', $tenant), [
-        'name' => '管理者1',
+        'name' => 'Admin1',
     ]);
 
     $response->assertRedirect(route('profile.edit'));
@@ -67,12 +67,12 @@ test('admin can leave when other admins exist', function () {
 });
 
 test('last admin cannot leave', function () {
-    $admin = User::factory()->create(['name' => '管理者']);
+    $admin = User::factory()->create(['name' => 'Admin']);
     $tenant = Tenant::factory()->create();
     $tenant->users()->attach($admin, ['role' => Tenant::ADMIN_ROLE, 'last_accessed_at' => now()]);
 
     $response = $this->actingAs($admin)->delete(route('tenants.members.leave', $tenant), [
-        'name' => '管理者',
+        'name' => 'Admin',
     ]);
 
     $response->assertRedirect();
@@ -81,10 +81,10 @@ test('last admin cannot leave', function () {
 });
 
 test('non-member cannot leave a tenant', function () {
-    $outsider = User::factory()->create(['name' => '部外者']);
+    $outsider = User::factory()->create(['name' => 'Outsider']);
     $tenant = Tenant::factory()->create();
 
     $this->actingAs($outsider)->delete(route('tenants.members.leave', $tenant), [
-        'name' => '部外者',
+        'name' => 'Outsider',
     ])->assertForbidden();
 });

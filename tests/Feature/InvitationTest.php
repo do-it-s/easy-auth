@@ -22,7 +22,7 @@ test('tenant admin can view and issue invitations', function () {
 
     $response = $this->actingAs($admin)->post(route('tenants.invitations.store', $tenant), [
         'role' => Tenant::MEMBER_ROLE,
-        'label' => 'テストメンバー招待',
+        'label' => 'Test member invite',
         'expires_at' => now()->addWeek()->format('Y-m-d\TH:i'),
     ]);
 
@@ -31,7 +31,7 @@ test('tenant admin can view and issue invitations', function () {
 
     $invitation = Invitation::where('tenant_id', $tenant->id)->first();
     expect($invitation->role)->toBe(Tenant::MEMBER_ROLE);
-    expect($invitation->label)->toBe('テストメンバー招待');
+    expect($invitation->label)->toBe('Test member invite');
     expect($invitation->expires_at)->not->toBeNull();
     expect($invitation->token)->not->toBeNull();
 
@@ -259,14 +259,14 @@ test('admin can update tenant settings including member invites toggle', functio
     attachTenantMember($tenant, $admin, Tenant::ADMIN_ROLE);
 
     $response = $this->actingAs($admin)->patch(route('tenants.update', $tenant), [
-        'name' => 'リネーム済みテナント',
+        'name' => 'Renamed Tenant',
         'member_invites_enabled' => false,
     ]);
 
     $response->assertRedirect(route('tenants.edit', $tenant));
 
     $tenant->refresh();
-    expect($tenant->name)->toBe('リネーム済みテナント');
+    expect($tenant->name)->toBe('Renamed Tenant');
     expect($tenant->member_invites_enabled)->toBeFalse();
 });
 

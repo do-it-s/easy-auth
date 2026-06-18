@@ -2,12 +2,12 @@
 
 @section('content')
     <div class="w-full max-w-sm">
-        <h1 class="mb-4 text-lg">メールアドレスでログイン</h1>
+        <h1 class="mb-4 text-lg">{{ __('easy-auth::auth.login_heading') }}</h1>
 
         <p id="login-status" class="mb-4 text-sm text-red-600"></p>
 
         <form id="login-form">
-            <label for="email" class="block mb-1 text-sm">メールアドレス</label>
+            <label for="email" class="block mb-1 text-sm">{{ __('easy-auth::auth.email') }}</label>
 
             <input
                 id="email"
@@ -17,7 +17,7 @@
                 class="w-full mb-4 px-2 py-1.5 border border-[#19140035] rounded-sm text-sm"
             >
 
-            <label for="password" class="block mb-1 text-sm">パスワード</label>
+            <label for="password" class="block mb-1 text-sm">{{ __('easy-auth::auth.password') }}</label>
 
             <input
                 id="password"
@@ -31,7 +31,7 @@
                 type="submit"
                 class="inline-block px-5 py-1.5 border border-[#19140035] hover:border-[#19140035] rounded-sm text-sm leading-normal"
             >
-                ログイン
+                {{ __('easy-auth::auth.login_button') }}
             </button>
         </form>
     </div>

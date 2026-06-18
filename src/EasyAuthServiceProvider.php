@@ -23,6 +23,7 @@ class EasyAuthServiceProvider extends ServiceProvider
     {
         $this->loadMigrationsFrom(__DIR__.'/../database/migrations');
         $this->loadViewsFrom(__DIR__.'/../resources/views', 'easy-auth');
+        $this->loadTranslationsFrom(__DIR__.'/../lang', 'easy-auth');
 
         // loadRoutesFrom() alone does not inherit the host application's
         // "web" middleware group (session, CSRF, cookies, shared errors),

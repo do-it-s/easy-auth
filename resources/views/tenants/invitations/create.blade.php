@@ -2,13 +2,13 @@
 
 @section('content')
     <div class="w-full max-w-sm">
-        <h1 class="mb-4 text-lg">{{ $tenant->name }} への招待</h1>
+        <h1 class="mb-4 text-lg">{{ __('easy-auth::invitations.create_heading', ['tenant' => $tenant->name]) }}</h1>
 
         @if ($invitationUrl)
             <div class="mb-4 p-3 border border-[#19140035] rounded-sm text-sm">
-                <p class="mb-2">招待を発行しました。このURLまたはQRコードを共有してください（このページを離れると再表示できません）。</p>
+                <p class="mb-2">{{ __('easy-auth::invitations.issued_notice') }}</p>
                 <p class="mb-2 break-all">{{ $invitationUrl }}</p>
-                <img src="{{ $invitationQrCode }}" alt="招待QRコード" class="w-40 h-40">
+                <img src="{{ $invitationQrCode }}" alt="{{ __('easy-auth::invitations.qr_alt') }}" class="w-40 h-40">
             </div>
         @endif
 
@@ -25,7 +25,7 @@
 
             <input type="hidden" name="role" value="{{ \DoITs\EasyAuth\Models\Tenant::MEMBER_ROLE }}">
 
-            <label for="label" class="block mb-1 text-sm">メモ（任意）</label>
+            <label for="label" class="block mb-1 text-sm">{{ __('easy-auth::invitations.label') }}</label>
 
             <input
                 id="label"
@@ -35,7 +35,7 @@
                 class="w-full mb-4 px-2 py-1.5 border border-[#19140035] rounded-sm text-sm"
             >
 
-            <label for="expires_at" class="block mb-1 text-sm">有効期限（空欄の場合は無期限）</label>
+            <label for="expires_at" class="block mb-1 text-sm">{{ __('easy-auth::invitations.expires_at') }}</label>
 
             <input
                 id="expires_at"
@@ -53,7 +53,7 @@
                         value="{{ \DoITs\EasyAuth\Models\Tenant::ADMIN_ROLE }}"
                         @checked(old('role') === \DoITs\EasyAuth\Models\Tenant::ADMIN_ROLE)
                     >
-                    管理者として招待
+                    {{ __('easy-auth::invitations.invite_as_admin') }}
                 </label>
             @endif
 
@@ -61,7 +61,7 @@
                 type="submit"
                 class="inline-block px-5 py-1.5 border border-[#19140035] hover:border-[#19140035] rounded-sm text-sm leading-normal"
             >
-                招待
+                {{ __('easy-auth::invitations.invite_button') }}
             </button>
         </form>
     </div>

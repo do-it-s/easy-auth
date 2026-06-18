@@ -47,7 +47,7 @@ class TenantMemberController extends Controller
         if ($validated['role'] === Tenant::MEMBER_ROLE && $tenant->isAdministeredBy($user)) {
             $adminCount = $tenant->users()->wherePivot('role', Tenant::ADMIN_ROLE)->count();
             if ($adminCount <= 1) {
-                return back()->withErrors(['role' => '最後の管理者は降格できません。']);
+                return back()->withErrors(['role' => __('easy-auth::members.last_admin_cannot_be_demoted')]);
             }
         }
 
@@ -68,7 +68,7 @@ class TenantMemberController extends Controller
         if ($tenant->isAdministeredBy($user)) {
             $adminCount = $tenant->users()->wherePivot('role', Tenant::ADMIN_ROLE)->count();
             if ($adminCount <= 1) {
-                return back()->withErrors(['role' => '最後の管理者は脱退させられません。']);
+                return back()->withErrors(['role' => __('easy-auth::members.last_admin_cannot_be_removed')]);
             }
         }
 
@@ -91,13 +91,13 @@ class TenantMemberController extends Controller
         ]);
 
         if ($validated['name'] !== $user->name) {
-            return back()->withErrors(['name' => '入力された名前が一致しません。'], 'leaveTenant');
+            return back()->withErrors(['name' => __('easy-auth::members.name_mismatch')], 'leaveTenant');
         }
 
         if ($tenant->isAdministeredBy($user)) {
             $adminCount = $tenant->users()->wherePivot('role', Tenant::ADMIN_ROLE)->count();
             if ($adminCount <= 1) {
-                return back()->withErrors(['name' => '最後の管理者は脱退できません。'], 'leaveTenant');
+                return back()->withErrors(['name' => __('easy-auth::members.last_admin_cannot_leave')], 'leaveTenant');
             }
         }
 

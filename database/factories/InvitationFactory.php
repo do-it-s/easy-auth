@@ -59,7 +59,7 @@ class InvitationFactory extends Factory
     {
         return $this->state(fn (array $attributes) => [
             'role' => Tenant::ADMIN_ROLE,
-            'label' => '緊急用バックアップコード',
+            'label' => __('easy-auth::backup_code.emergency_label'),
             'expires_at' => null,
             'is_backup_code' => true,
         ]);

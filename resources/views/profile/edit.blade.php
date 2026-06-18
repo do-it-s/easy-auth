@@ -2,7 +2,7 @@
 
 @section('content')
     <div class="w-full max-w-sm">
-        <h1 class="mb-4 text-lg">プロフィールを入力</h1>
+        <h1 class="mb-4 text-lg">{{ __('easy-auth::profile.edit_heading') }}</h1>
 
         @error('name')
             <p class="mb-4 text-[#F53003]">{{ $message }}</p>
@@ -14,7 +14,7 @@
             @csrf
             @method('PATCH')
 
-            <label for="name" class="block mb-1 text-sm">お名前</label>
+            <label for="name" class="block mb-1 text-sm">{{ __('easy-auth::profile.name') }}</label>
 
             <input
                 id="name"
@@ -29,7 +29,7 @@
                     type="submit"
                     class="inline-block px-5 py-1.5 border border-[#19140035] hover:border-[#19140035] rounded-sm text-sm leading-normal"
                 >
-                    保存
+                    {{ __('easy-auth::profile.save') }}
                 </button>
 
                 @if ($currentTenant)
@@ -38,7 +38,7 @@
                         id="show-leave-tenant"
                         class="{{ $leaveTenantHasError ? 'hidden' : '' }} px-5 py-1.5 border border-[#19140035] rounded-sm text-sm leading-normal hover:bg-[#19140012]"
                     >
-                        脱退
+                        {{ __('easy-auth::profile.leave') }}
                     </button>
                 @endif
             </div>
@@ -57,7 +57,7 @@
                     @method('DELETE')
 
                     <label for="leave-tenant-name" class="block mb-1 text-sm">
-                        {{ $currentTenant->name }}を脱退するには名前を入力してください
+                        {{ __('easy-auth::profile.leave_confirm_label', ['tenant' => $currentTenant->name]) }}
                     </label>
 
                     <input
@@ -75,7 +75,7 @@
                         type="submit"
                         class="inline-block px-5 py-1.5 border border-[#19140035] rounded-sm text-sm leading-normal hover:bg-[#19140012]"
                     >
-                        脱退
+                        {{ __('easy-auth::profile.leave') }}
                     </button>
                 </form>
             </div>

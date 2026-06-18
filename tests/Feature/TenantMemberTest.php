@@ -4,8 +4,8 @@ use DoITs\EasyAuth\Models\Tenant;
 use DoITs\EasyAuth\Tests\Fixtures\User;
 
 test('admin can view the member list', function () {
-    $admin = User::factory()->create(['name' => '管理者']);
-    $member = User::factory()->create(['name' => 'メンバー太郎']);
+    $admin = User::factory()->create(['name' => 'Admin']);
+    $member = User::factory()->create(['name' => 'Taro']);
     $tenant = Tenant::factory()->create();
 
     $tenant->users()->attach($admin, ['role' => Tenant::ADMIN_ROLE, 'last_accessed_at' => now()]);
@@ -14,12 +14,12 @@ test('admin can view the member list', function () {
     $response = $this->actingAs($admin)->get(route('tenants.members.index', $tenant));
 
     $response->assertOk();
-    $response->assertSee('管理者');
-    $response->assertSee('メンバー太郎');
+    $response->assertSee('Admin');
+    $response->assertSee('Taro');
 });
 
 test('ordinary member cannot view the member list', function () {
-    $member = User::factory()->create(['name' => 'メンバー']);
+    $member = User::factory()->create(['name' => 'Member']);
     $tenant = Tenant::factory()->create();
     $tenant->users()->attach($member, ['role' => Tenant::MEMBER_ROLE, 'last_accessed_at' => now()]);
 
@@ -27,15 +27,15 @@ test('ordinary member cannot view the member list', function () {
 });
 
 test('non-member cannot view the member list', function () {
-    $outsider = User::factory()->create(['name' => '部外者']);
+    $outsider = User::factory()->create(['name' => 'Outsider']);
     $tenant = Tenant::factory()->create();
 
     $this->actingAs($outsider)->get(route('tenants.members.index', $tenant))->assertForbidden();
 });
 
 test('member list shows admins in the first section and others in the second', function () {
-    $admin = User::factory()->create(['name' => '管理者花子']);
-    $member = User::factory()->create(['name' => 'メンバー太郎']);
+    $admin = User::factory()->create(['name' => 'Hanako']);
+    $member = User::factory()->create(['name' => 'Taro']);
     $tenant = Tenant::factory()->create();
 
     $tenant->users()->attach($admin, ['role' => Tenant::ADMIN_ROLE, 'last_accessed_at' => now()]);
@@ -43,12 +43,12 @@ test('member list shows admins in the first section and others in the second', f
 
     $response = $this->actingAs($admin)->get(route('tenants.members.index', $tenant));
 
-    $response->assertSeeInOrder(['管理者花子', 'メンバー太郎']);
+    $response->assertSeeInOrder(['Hanako', 'Taro']);
 });
 
 test('admin can promote a member to admin', function () {
-    $admin = User::factory()->create(['name' => '管理者']);
-    $member = User::factory()->create(['name' => 'メンバー']);
+    $admin = User::factory()->create(['name' => 'Admin']);
+    $member = User::factory()->create(['name' => 'Member']);
     $tenant = Tenant::factory()->create();
 
     $tenant->users()->attach($admin, ['role' => Tenant::ADMIN_ROLE, 'last_accessed_at' => now()]);
@@ -63,8 +63,8 @@ test('admin can promote a member to admin', function () {
 });
 
 test('admin cannot demote themselves', function () {
-    $admin1 = User::factory()->create(['name' => '管理者1']);
-    $admin2 = User::factory()->create(['name' => '管理者2']);
+    $admin1 = User::factory()->create(['name' => 'Admin1']);
+    $admin2 = User::factory()->create(['name' => 'Admin2']);
     $tenant = Tenant::factory()->create();
 
     $tenant->users()->attach($admin1, ['role' => Tenant::ADMIN_ROLE, 'last_accessed_at' => now()]);
@@ -78,8 +78,8 @@ test('admin cannot demote themselves', function () {
 });
 
 test('admin can demote another admin when other admins exist', function () {
-    $admin1 = User::factory()->create(['name' => '管理者1']);
-    $admin2 = User::factory()->create(['name' => '管理者2']);
+    $admin1 = User::factory()->create(['name' => 'Admin1']);
+    $admin2 = User::factory()->create(['name' => 'Admin2']);
     $tenant = Tenant::factory()->create();
 
     $tenant->users()->attach($admin1, ['role' => Tenant::ADMIN_ROLE, 'last_accessed_at' => now()]);
@@ -94,7 +94,7 @@ test('admin can demote another admin when other admins exist', function () {
 });
 
 test('cannot demote the last admin', function () {
-    $admin = User::factory()->create(['name' => '管理者']);
+    $admin = User::factory()->create(['name' => 'Admin']);
     $tenant = Tenant::factory()->create();
     $tenant->users()->attach($admin, ['role' => Tenant::ADMIN_ROLE, 'last_accessed_at' => now()]);
 
@@ -106,8 +106,8 @@ test('cannot demote the last admin', function () {
 });
 
 test('member cannot change roles', function () {
-    $member = User::factory()->create(['name' => 'メンバー']);
-    $other = User::factory()->create(['name' => 'もう一人']);
+    $member = User::factory()->create(['name' => 'Member']);
+    $other = User::factory()->create(['name' => 'Another Member']);
     $tenant = Tenant::factory()->create();
 
     $tenant->users()->attach($member, ['role' => Tenant::MEMBER_ROLE, 'last_accessed_at' => now()]);
@@ -119,8 +119,8 @@ test('member cannot change roles', function () {
 });
 
 test('non-member cannot change roles', function () {
-    $outsider = User::factory()->create(['name' => '部外者']);
-    $member = User::factory()->create(['name' => 'メンバー']);
+    $outsider = User::factory()->create(['name' => 'Outsider']);
+    $member = User::factory()->create(['name' => 'Member']);
     $tenant = Tenant::factory()->create();
     $tenant->users()->attach($member, ['role' => Tenant::MEMBER_ROLE, 'last_accessed_at' => now()]);
 
@@ -130,7 +130,7 @@ test('non-member cannot change roles', function () {
 });
 
 test('admin cannot remove themselves', function () {
-    $admin = User::factory()->create(['name' => '管理者']);
+    $admin = User::factory()->create(['name' => 'Admin']);
     $tenant = Tenant::factory()->create();
     $tenant->users()->attach($admin, ['role' => Tenant::ADMIN_ROLE, 'last_accessed_at' => now()]);
 
@@ -139,8 +139,8 @@ test('admin cannot remove themselves', function () {
 });
 
 test('admin can remove a member', function () {
-    $admin = User::factory()->create(['name' => '管理者']);
-    $member = User::factory()->create(['name' => 'メンバー']);
+    $admin = User::factory()->create(['name' => 'Admin']);
+    $member = User::factory()->create(['name' => 'Member']);
     $tenant = Tenant::factory()->create();
 
     $tenant->users()->attach($admin, ['role' => Tenant::ADMIN_ROLE, 'last_accessed_at' => now()]);
@@ -153,8 +153,8 @@ test('admin can remove a member', function () {
 });
 
 test('admin can remove another admin when other admins exist', function () {
-    $admin1 = User::factory()->create(['name' => '管理者1']);
-    $admin2 = User::factory()->create(['name' => '管理者2']);
+    $admin1 = User::factory()->create(['name' => 'Admin1']);
+    $admin2 = User::factory()->create(['name' => 'Admin2']);
     $tenant = Tenant::factory()->create();
 
     $tenant->users()->attach($admin1, ['role' => Tenant::ADMIN_ROLE, 'last_accessed_at' => now()]);
@@ -167,7 +167,7 @@ test('admin can remove another admin when other admins exist', function () {
 });
 
 test('cannot remove the last admin', function () {
-    $admin = User::factory()->create(['name' => '管理者']);
+    $admin = User::factory()->create(['name' => 'Admin']);
     $tenant = Tenant::factory()->create();
     $tenant->users()->attach($admin, ['role' => Tenant::ADMIN_ROLE, 'last_accessed_at' => now()]);
 
@@ -178,8 +178,8 @@ test('cannot remove the last admin', function () {
 });
 
 test('member cannot remove other members', function () {
-    $member = User::factory()->create(['name' => 'メンバー']);
-    $other = User::factory()->create(['name' => 'もう一人']);
+    $member = User::factory()->create(['name' => 'Member']);
+    $other = User::factory()->create(['name' => 'Another Member']);
     $tenant = Tenant::factory()->create();
 
     $tenant->users()->attach($member, ['role' => Tenant::MEMBER_ROLE, 'last_accessed_at' => now()]);
@@ -190,8 +190,8 @@ test('member cannot remove other members', function () {
 });
 
 test('non-member cannot remove a member', function () {
-    $outsider = User::factory()->create(['name' => '部外者']);
-    $member = User::factory()->create(['name' => 'メンバー']);
+    $outsider = User::factory()->create(['name' => 'Outsider']);
+    $member = User::factory()->create(['name' => 'Member']);
     $tenant = Tenant::factory()->create();
     $tenant->users()->attach($member, ['role' => Tenant::MEMBER_ROLE, 'last_accessed_at' => now()]);
 
