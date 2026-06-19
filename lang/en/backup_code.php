@@ -5,6 +5,8 @@ return [
     'intro' => 'In case all administrators lose their device, you can issue a recovery backup code. The issued code is a one-time invitation link that lets someone join as an administrator. Keep it somewhere safe.',
     'issued_notice' => 'The backup code has been issued. Keep this URL or QR code somewhere safe (it will not be shown again once you leave this page).',
     'qr_alt' => 'Backup code QR code',
+    'copy_button' => 'Copy',
+    'copy_done' => 'Copied!',
     'current_label' => 'Current backup code:',
     'configured' => 'Configured',
     'not_configured' => 'Not configured',

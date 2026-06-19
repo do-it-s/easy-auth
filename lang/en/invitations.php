@@ -15,6 +15,8 @@ return [
     'index_heading' => ':tenant invitations',
     'issued_notice' => 'The invitation has been issued. Share this URL or QR code (it will not be shown again once you leave this page).',
     'qr_alt' => 'Invitation QR code',
+    'copy_button' => 'Copy',
+    'copy_done' => 'Copied!',
     'label' => 'Note (optional)',
     'expires_at' => 'Expiration (leave blank for no expiration)',
     'invite_as_admin' => 'Invite as administrator',

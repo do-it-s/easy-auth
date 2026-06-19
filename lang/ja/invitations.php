@@ -15,6 +15,8 @@ return [
     'index_heading' => ':tenant の招待一覧',
     'issued_notice' => '招待を発行しました。このURLまたはQRコードを共有してください（このページを離れると再表示できません）。',
     'qr_alt' => '招待QRコード',
+    'copy_button' => 'コピー',
+    'copy_done' => 'コピーしました',
     'label' => 'メモ（任意）',
     'expires_at' => '有効期限（空欄の場合は無期限）',
     'invite_as_admin' => '管理者として招待',

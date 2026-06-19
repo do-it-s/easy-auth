@@ -11,9 +11,29 @@
         @if ($invitationUrl)
             <div class="mb-4 p-3 border border-[#19140035] rounded-sm text-sm">
                 <p class="mb-2">{{ __('easy-auth::backup_code.issued_notice') }}</p>
-                <p class="mb-2 break-all">{{ $invitationUrl }}</p>
+                <div class="mb-2 flex items-center gap-2">
+                    <p class="break-all flex-1">{{ $invitationUrl }}</p>
+                    <button
+                        type="button"
+                        class="js-copy-invitation-url shrink-0 px-2 py-1 border border-[#19140035] hover:border-[#19140035] rounded-sm text-xs leading-normal"
+                        data-url="{{ $invitationUrl }}"
+                        data-label="{{ __('easy-auth::backup_code.copy_button') }}"
+                        data-label-copied="{{ __('easy-auth::backup_code.copy_done') }}"
+                    >{{ __('easy-auth::backup_code.copy_button') }}</button>
+                </div>
                 <img src="{{ $invitationQrCode }}" alt="{{ __('easy-auth::backup_code.qr_alt') }}" class="w-40 h-40">
             </div>
+
+            <script>
+                document.querySelectorAll('.js-copy-invitation-url').forEach((button) => {
+                    button.addEventListener('click', () => {
+                        navigator.clipboard.writeText(button.dataset.url).then(() => {
+                            button.textContent = button.dataset.labelCopied;
+                            setTimeout(() => { button.textContent = button.dataset.label; }, 1500);
+                        });
+                    });
+                });
+            </script>
         @else
             <p class="mb-4 text-sm">
                 {{ __('easy-auth::backup_code.current_label') }}
