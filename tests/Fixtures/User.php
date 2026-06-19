@@ -7,16 +7,14 @@ use DoITs\EasyAuth\Contracts\EasyAuthUser;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
-use Laravel\Passkeys\Contracts\PasskeyUser;
-use Laravel\Passkeys\PasskeyAuthenticatable;
 
 /**
  * Minimal stand-in for a host application's own User model, used only by
  * this package's own test suite to exercise Contracts\EasyAuthUser.
  */
-class User extends Authenticatable implements EasyAuthUser, PasskeyUser
+class User extends Authenticatable implements EasyAuthUser
 {
-    use HasFactory, IsEasyAuthUser, Notifiable, PasskeyAuthenticatable;
+    use HasFactory, IsEasyAuthUser, Notifiable;
 
     protected $fillable = ['name', 'email', 'password'];
 

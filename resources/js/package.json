@@ -1,0 +1,10 @@
+{
+    "name": "@do-it-s/easy-auth-js",
+    "version": "0.1.0",
+    "private": true,
+    "type": "module",
+    "main": "index.js",
+    "dependencies": {
+        "@laravel/passkeys": "^0.2.0"
+    }
+}

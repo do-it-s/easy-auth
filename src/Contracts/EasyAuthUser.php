@@ -6,14 +6,15 @@ use DoITs\EasyAuth\Models\Device;
 use DoITs\EasyAuth\Models\Tenant;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
+use Laravel\Passkeys\Contracts\PasskeyUser;
 
 /**
  * Implemented by the host application's own User model (alongside
  * Concerns\IsEasyAuthUser) so the package never needs to own the User
- * model directly, mirroring how laravel/passkeys' own PasskeyUser
- * contract is implemented by the host's User model.
+ * model directly. Extends laravel/passkeys' own PasskeyUser contract so
+ * the host only has to declare one interface instead of two.
  */
-interface EasyAuthUser
+interface EasyAuthUser extends PasskeyUser
 {
     /**
      * The device this user is bound to.

@@ -22,6 +22,7 @@ Thumbs.db
 
 # Dependencies
 /node_modules
+/resources/js/node_modules
 /vendor
 composer.lock
 
