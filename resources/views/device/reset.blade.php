@@ -12,7 +12,7 @@
         <button
             id="clear"
             type="button"
-            class="inline-block px-5 py-1.5 border border-[#19140035] hover:border-[#19140035] rounded-sm text-sm leading-normal"
+            class="inline-block px-5 py-1.5 border border-[#19140035] dark:border-[#3E3E3A] hover:border-[#19140035] dark:hover:border-[#3E3E3A] rounded-sm text-sm leading-normal"
         >
             {{ __('easy-auth::device.clear_button') }}
         </button>

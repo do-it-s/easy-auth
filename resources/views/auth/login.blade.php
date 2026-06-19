@@ -14,7 +14,7 @@
                 name="email"
                 type="email"
                 required
-                class="w-full mb-4 px-2 py-1.5 border border-[#19140035] rounded-sm text-sm"
+                class="w-full mb-4 px-2 py-1.5 border border-[#19140035] dark:border-[#3E3E3A] rounded-sm text-sm"
             >
 
             <label for="password" class="block mb-1 text-sm">{{ __('easy-auth::auth.password') }}</label>
@@ -24,12 +24,12 @@
                 name="password"
                 type="password"
                 required
-                class="w-full mb-4 px-2 py-1.5 border border-[#19140035] rounded-sm text-sm"
+                class="w-full mb-4 px-2 py-1.5 border border-[#19140035] dark:border-[#3E3E3A] rounded-sm text-sm"
             >
 
             <button
                 type="submit"
-                class="inline-block px-5 py-1.5 border border-[#19140035] hover:border-[#19140035] rounded-sm text-sm leading-normal"
+                class="inline-block px-5 py-1.5 border border-[#19140035] dark:border-[#3E3E3A] hover:border-[#19140035] dark:hover:border-[#3E3E3A] rounded-sm text-sm leading-normal"
             >
                 {{ __('easy-auth::auth.login_button') }}
             </button>

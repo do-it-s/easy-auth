@@ -9,13 +9,13 @@
         </p>
 
         @if ($invitationUrl)
-            <div class="mb-4 p-3 border border-[#19140035] rounded-sm text-sm">
+            <div class="mb-4 p-3 border border-[#19140035] dark:border-[#3E3E3A] rounded-sm text-sm">
                 <p class="mb-2">{{ __('easy-auth::backup_code.issued_notice') }}</p>
                 <div class="mb-2 flex items-center gap-2">
                     <p class="break-all flex-1">{{ $invitationUrl }}</p>
                     <button
                         type="button"
-                        class="js-copy-invitation-url shrink-0 px-2 py-1 border border-[#19140035] hover:border-[#19140035] rounded-sm text-xs leading-normal"
+                        class="js-copy-invitation-url shrink-0 px-2 py-1 border border-[#19140035] dark:border-[#3E3E3A] hover:border-[#19140035] dark:hover:border-[#3E3E3A] rounded-sm text-xs leading-normal"
                         data-url="{{ $invitationUrl }}"
                         data-label="{{ __('easy-auth::backup_code.copy_button') }}"
                         data-label-copied="{{ __('easy-auth::backup_code.copy_done') }}"
@@ -40,7 +40,7 @@
                 @if ($hasUsableBackupCode)
                     {{ __('easy-auth::backup_code.configured') }}
                 @else
-                    <span class="text-[#F53003]">{{ __('easy-auth::backup_code.not_configured') }}</span>
+                    <span class="text-[#F53003] dark:text-[#FF4433]">{{ __('easy-auth::backup_code.not_configured') }}</span>
                 @endif
             </p>
         @endif
@@ -50,7 +50,7 @@
 
             <button
                 type="submit"
-                class="inline-block px-5 py-1.5 border border-[#19140035] hover:border-[#19140035] rounded-sm text-sm leading-normal"
+                class="inline-block px-5 py-1.5 border border-[#19140035] dark:border-[#3E3E3A] hover:border-[#19140035] dark:hover:border-[#3E3E3A] rounded-sm text-sm leading-normal"
             >
                 {{ $hasUsableBackupCode ? __('easy-auth::backup_code.reissue_button') : __('easy-auth::backup_code.issue_button') }}
             </button>

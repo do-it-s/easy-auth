@@ -5,7 +5,7 @@
         <h1 class="mb-4 text-lg">{{ __('easy-auth::invitations.index_heading', ['tenant' => $tenant->name]) }}</h1>
 
         @forelse ($invitations as $invitation)
-            <div class="mb-2 p-3 border border-[#19140035] rounded-sm text-sm">
+            <div class="mb-2 p-3 border border-[#19140035] dark:border-[#3E3E3A] rounded-sm text-sm">
                 <p>
                     {{ __('easy-auth::invitations.role_label') }}
                     @if ($invitation->role === \DoITs\EasyAuth\Models\Tenant::ADMIN_ROLE)
@@ -45,7 +45,7 @@
 
                             <button
                                 type="submit"
-                                class="inline-block px-5 py-1.5 border border-[#19140035] hover:border-[#19140035] rounded-sm text-sm leading-normal"
+                                class="inline-block px-5 py-1.5 border border-[#19140035] dark:border-[#3E3E3A] hover:border-[#19140035] dark:hover:border-[#3E3E3A] rounded-sm text-sm leading-normal"
                             >
                                 {{ __('easy-auth::invitations.revoke') }}
                             </button>
