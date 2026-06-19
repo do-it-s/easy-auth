@@ -22,7 +22,7 @@ class RegisterController extends Controller
             'name' => ['required', 'string', 'max:255'],
             'email' => ['required', 'string', 'email', 'max:255', 'unique:users,email'],
             'password' => ['required', 'confirmed', Password::defaults()],
-        ]);
+        ], trans('easy-auth::validation'));
 
         $userModel = config('auth.providers.users.model');
 

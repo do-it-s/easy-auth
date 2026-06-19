@@ -28,7 +28,7 @@ class LoginController extends Controller
         $credentials = $request->validate([
             'email' => ['required', 'string', 'email'],
             'password' => ['required', 'string'],
-        ]);
+        ], trans('easy-auth::validation'));
 
         if (! Auth::attempt($credentials)) {
             throw ValidationException::withMessages([

@@ -32,7 +32,7 @@ class TenantController extends Controller
     {
         $validated = $request->validate([
             'name' => ['required', 'string', 'max:255'],
-        ]);
+        ], trans('easy-auth::validation'));
 
         $tenant = Tenant::create($validated);
 
@@ -74,7 +74,7 @@ class TenantController extends Controller
         $validated = $request->validate([
             'name' => ['required', 'string', 'max:255'],
             'member_invites_enabled' => ['nullable', 'boolean'],
-        ]);
+        ], trans('easy-auth::validation'));
 
         $tenant->update([
             'name' => $validated['name'],

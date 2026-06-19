@@ -95,7 +95,7 @@ class ProfileController extends Controller
     {
         $validated = $request->validate([
             'name' => ['required', 'string', 'max:255'],
-        ]);
+        ], trans('easy-auth::validation'));
 
         $request->user()->update($validated);
 

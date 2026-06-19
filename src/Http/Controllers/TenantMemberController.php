@@ -42,7 +42,7 @@ class TenantMemberController extends Controller
 
         $validated = $request->validate([
             'role' => ['required', Rule::in([Tenant::ADMIN_ROLE, Tenant::MEMBER_ROLE])],
-        ]);
+        ], trans('easy-auth::validation'));
 
         if ($validated['role'] === Tenant::MEMBER_ROLE && $tenant->isAdministeredBy($user)) {
             $adminCount = $tenant->users()->wherePivot('role', Tenant::ADMIN_ROLE)->count();
@@ -88,7 +88,7 @@ class TenantMemberController extends Controller
 
         $validated = $request->validate([
             'name' => ['required', 'string'],
-        ]);
+        ], trans('easy-auth::validation'));
 
         if ($validated['name'] !== $user->name) {
             return back()->withErrors(['name' => __('easy-auth::members.name_mismatch')], 'leaveTenant');

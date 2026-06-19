@@ -60,7 +60,7 @@ class InvitationController extends Controller
             'role' => ['required', Rule::in($allowedRoles)],
             'label' => ['nullable', 'string', 'max:255'],
             'expires_at' => ['nullable', 'date', 'after:now'],
-        ]);
+        ], trans('easy-auth::validation'));
 
         $token = Invitation::generateToken();
 
