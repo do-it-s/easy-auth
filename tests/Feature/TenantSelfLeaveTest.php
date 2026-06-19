@@ -50,6 +50,20 @@ test('member cannot leave when the typed name does not match', function () {
     expect($tenant->hasMember($user))->toBeTrue();
 });
 
+test('member cannot leave when the typed name is blank', function () {
+    $user = User::factory()->create(['name' => 'Member']);
+    $tenant = Tenant::factory()->create();
+    $tenant->users()->attach($user, ['role' => Tenant::MEMBER_ROLE, 'last_accessed_at' => now()]);
+
+    $response = $this->actingAs($user)->delete(route('tenants.members.leave', $tenant), [
+        'name' => '',
+    ]);
+
+    $response->assertRedirect();
+    $response->assertSessionHasErrors('name', null, 'leaveTenant');
+    expect($tenant->hasMember($user))->toBeTrue();
+});
+
 test('admin can leave when other admins exist', function () {
     $admin1 = User::factory()->create(['name' => 'Admin1']);
     $admin2 = User::factory()->create(['name' => 'Admin2']);

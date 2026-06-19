@@ -86,7 +86,7 @@ class TenantMemberController extends Controller
 
         $this->authorize('leave', $tenant);
 
-        $validated = $request->validate([
+        $validated = $request->validateWithBag('leaveTenant', [
             'name' => ['required', 'string'],
         ], trans('easy-auth::validation'));
 
