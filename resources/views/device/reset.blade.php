@@ -4,6 +4,8 @@
     <div class="w-full max-w-sm">
         <h1 class="mb-4 text-lg">{{ __('easy-auth::device.heading') }}</h1>
 
+        <p class="mb-4 text-sm">{{ __('easy-auth::device.description') }}</p>
+
         <p class="mb-4 text-sm">
             <span class="block">device_uuid: <span id="device-uuid"></span></span>
             <span class="block">auth_method: <span id="auth-method"></span></span>
@@ -16,6 +18,8 @@
         >
             {{ __('easy-auth::device.clear_button') }}
         </button>
+
+        <p id="status" class="mt-4 text-sm"></p>
     </div>
 @endsection
 
@@ -25,6 +29,8 @@
         const authMethodEl = document.getElementById('auth-method');
         const statusEl = document.getElementById('status');
         const noneLabel = @json(__('easy-auth::device.none'));
+        const clearedLabel = @json(__('easy-auth::device.cleared'));
+        const nextStepLabel = @json(__('easy-auth::device.next_step'));
 
         deviceUuidEl.textContent = localStorage.getItem('device_uuid') ?? noneLabel;
         authMethodEl.textContent = localStorage.getItem('auth_method') ?? noneLabel;
@@ -35,7 +41,7 @@
 
             deviceUuidEl.textContent = noneLabel;
             authMethodEl.textContent = noneLabel;
-            statusEl.textContent = @json(__('easy-auth::device.cleared'));
+            statusEl.textContent = [clearedLabel, nextStepLabel].join(' ');
         });
     </script>
 @endpush

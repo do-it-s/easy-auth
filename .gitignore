@@ -32,3 +32,6 @@ composer.lock
 
 # Generated
 _ide_helper.php
+
+# Local dev scripts (not part of the package)
+/refresh-digicor-vendor.ps1

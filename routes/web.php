@@ -24,6 +24,7 @@ Route::middleware(array_filter(['guest', config('passkeys.throttle')]))->group(f
 
     Route::get('/login', [LoginController::class, 'create'])->name('login');
     Route::post('/login', [LoginController::class, 'store']);
+    Route::get('/login/reset-link-visibility', [LoginController::class, 'resetLinkVisibility'])->name('login.reset-link-visibility');
 });
 
 Route::middleware('auth')->group(function () {

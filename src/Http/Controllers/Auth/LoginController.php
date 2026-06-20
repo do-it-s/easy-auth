@@ -3,6 +3,7 @@
 namespace DoITs\EasyAuth\Http\Controllers\Auth;
 
 use DoITs\EasyAuth\Http\Controllers\Controller;
+use DoITs\EasyAuth\Models\Device;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
@@ -55,5 +56,25 @@ class LoginController extends Controller
         }
 
         return redirect()->intended(route('home'));
+    }
+
+    /**
+     * Report whether the device/reset escape hatch should be shown on the
+     * login page for the given device, based on the device's actual
+     * binding state rather than the client's own claims about itself.
+     */
+    public function resetLinkVisibility(Request $request): JsonResponse
+    {
+        $uuid = $request->header('X-Device-Uuid');
+
+        if (blank($uuid)) {
+            return response()->json(['show_reset_link' => false]);
+        }
+
+        $device = Device::where('uuid', $uuid)->first();
+
+        return response()->json([
+            'show_reset_link' => $device === null || blank($device->user?->password),
+        ]);
     }
 }

@@ -34,5 +34,11 @@
                 {{ __('easy-auth::auth.login_button') }}
             </button>
         </form>
+
+        <p id="device-reset-link" class="hidden mt-4 text-sm">
+            <a href="{{ route('device.reset') }}" class="underline">
+                {{ __('easy-auth::auth.cant_login_link') }}
+            </a>
+        </p>
     </div>
 @endsection

@@ -18,6 +18,7 @@ export function initEasyAuth() {
     const registerNameInput = document.getElementById('register-name');
     const status = document.getElementById('passkey-status');
     const loginStatus = document.getElementById('login-status');
+    const deviceResetLink = document.getElementById('device-reset-link');
     const isAuthenticated = document.querySelector('meta[name="auth"]')?.getAttribute('content') === '1';
 
     function showPasswordRegisterForm() {
@@ -67,6 +68,31 @@ export function initEasyAuth() {
         } else if (Passkeys.isSupported()) {
             loginWithPasskey({ silent: true, fallbackToLogin: true });
         }
+    }
+
+    // /login にいる場合、この端末がdeviceに束縛されていない(=passkey起源で詰んでいる可能性がある)
+    // ことが自己申告(auth_method)から分かれば即座にdevice/resetへの導線を見せる。
+    const deviceUuid = localStorage.getItem('device_uuid');
+
+    if (window.location.pathname === '/login' && deviceUuid) {
+        if (localStorage.getItem('auth_method') !== 'password') {
+            deviceResetLink?.classList.remove('hidden');
+        }
+
+        // 自己申告は信用しきれないため、サーバー側の実態(Device→User.password)でも確認する。
+        fetch('/login/reset-link-visibility', {
+            headers: {
+                Accept: 'application/json',
+                'X-Device-Uuid': deviceUuid,
+            },
+        })
+            .then((response) => response.json())
+            .then((data) => {
+                if (data.show_reset_link) {
+                    deviceResetLink?.classList.remove('hidden');
+                }
+            })
+            .catch(() => {});
     }
 
     // パスキーに対応していないブラウザでは、最初からメール+パスワードでの登録フォームを表示する。
@@ -196,6 +222,8 @@ export function initEasyAuth() {
             if (loginStatus) {
                 loginStatus.textContent = error.message;
             }
+
+            deviceResetLink?.classList.remove('hidden');
         }
     });
 }
