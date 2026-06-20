@@ -1,6 +1,8 @@
 <?php
 
+use DoITs\EasyAuth\Notifications\AccountDeletionLinkNotification;
 use DoITs\EasyAuth\Tests\Fixtures\User;
+use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Str;
 
 test('a user can log in with the correct email and password', function () {
@@ -76,7 +78,8 @@ test('a user with a registered device can log in with the matching device UUID',
     $this->assertAuthenticatedAs($user);
 });
 
-test('a user with a registered device cannot log in from a different device', function () {
+test('a user with a registered device cannot log in from a different device, and is emailed an account deletion link', function () {
+    Notification::fake();
     $user = User::factory()->create([
         'email' => 'taro@example.com',
         'password' => 'password',
@@ -90,4 +93,26 @@ test('a user with a registered device cannot log in from a different device', fu
 
     $response->assertUnprocessable()->assertJsonValidationErrors('email');
     $this->assertGuest();
+    Notification::assertSentTo($user, AccountDeletionLinkNotification::class);
+});
+
+test('the device-mismatch response is indistinguishable from a wrong-password response', function () {
+    Notification::fake();
+    User::factory()->create([
+        'email' => 'taro@example.com',
+        'password' => 'password',
+    ])->device()->create(['uuid' => (string) Str::uuid()]);
+
+    $wrongPassword = $this->postJson('/login', [
+        'email' => 'taro@example.com',
+        'password' => 'wrong-password',
+    ]);
+
+    $wrongDevice = $this->postJson('/login', [
+        'email' => 'taro@example.com',
+        'password' => 'password',
+    ], ['X-Device-Uuid' => (string) Str::uuid()]);
+
+    expect($wrongDevice->status())->toBe($wrongPassword->status());
+    expect($wrongDevice->json())->toEqual($wrongPassword->json());
 });

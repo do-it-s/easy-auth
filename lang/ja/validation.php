@@ -16,6 +16,9 @@ return [
     'password.confirmed' => 'パスワード（確認）が一致しません。',
     'password.min' => 'パスワードは:min文字以上で入力してください。',
 
+    'token.required' => 'トークンを指定してください。',
+    'token.string' => 'トークンの形式が正しくありません。',
+
     'role.required' => '権限を選択してください。',
     'role.in' => '選択された権限は無効です。',
 

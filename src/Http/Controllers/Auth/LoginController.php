@@ -3,12 +3,13 @@
 namespace DoITs\EasyAuth\Http\Controllers\Auth;
 
 use DoITs\EasyAuth\Http\Controllers\Controller;
-use DoITs\EasyAuth\Models\Device;
+use DoITs\EasyAuth\Notifications\AccountDeletionLinkNotification;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\URL;
 use Illuminate\Validation\ValidationException;
 
 class LoginController extends Controller
@@ -42,6 +43,21 @@ class LoginController extends Controller
         if ($user->device && $user->device->uuid !== $request->header('X-Device-Uuid')) {
             Auth::logout();
 
+            // The password matched, but this device never will: no amount of
+            // retrying gets this user back in. Email a short-lived signed
+            // account-deletion link rather than revealing that fact in the
+            // response itself — doing so synchronously would let anyone
+            // probing with a guessed or leaked password confirm its
+            // correctness even without the right device, the exact oracle
+            // this package's generic login_failed wording exists to avoid.
+            $user->notify(new AccountDeletionLinkNotification(
+                URL::temporarySignedRoute(
+                    'account-deletion.show',
+                    now()->addMinutes(15),
+                    ['id' => $user->id],
+                ),
+            ));
+
             throw ValidationException::withMessages([
                 'email' => __('easy-auth::auth.login_failed'),
             ]);
@@ -56,25 +72,5 @@ class LoginController extends Controller
         }
 
         return redirect()->intended(route('home'));
-    }
-
-    /**
-     * Report whether the device/reset escape hatch should be shown on the
-     * login page for the given device, based on the device's actual
-     * binding state rather than the client's own claims about itself.
-     */
-    public function resetLinkVisibility(Request $request): JsonResponse
-    {
-        $uuid = $request->header('X-Device-Uuid');
-
-        if (blank($uuid)) {
-            return response()->json(['show_reset_link' => false]);
-        }
-
-        $device = Device::where('uuid', $uuid)->first();
-
-        return response()->json([
-            'show_reset_link' => $device === null || blank($device->user?->password),
-        ]);
     }
 }

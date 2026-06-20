@@ -30,6 +30,12 @@ abstract class TestCase extends BaseTestCase
             'driver' => 'sqlite',
             'database' => ':memory:',
             'prefix' => '',
+            // Off by default for sqlite; without this, the cascadeOnDelete()/
+            // nullOnDelete() foreign keys declared in this package's own
+            // migrations would silently no-op under the test suite even
+            // though they're enforced by a real host application's MySQL/
+            // MariaDB database.
+            'foreign_key_constraints' => true,
         ]);
 
         $app['config']->set('auth.providers.users.model', User::class);
@@ -51,8 +57,10 @@ abstract class TestCase extends BaseTestCase
     }
 
     /**
-     * Build the host application's `users` table (which this package never
-     * owns) plus this package's own migrations, ahead of each test.
+     * Build the host application's `users` and `password_reset_tokens`
+     * tables (which this package never owns — it assumes a host app's
+     * own default Laravel migrations already provide them) plus this
+     * package's own migrations, ahead of each test.
      */
     protected function defineDatabaseMigrations(): void
     {
@@ -64,6 +72,12 @@ abstract class TestCase extends BaseTestCase
             $table->string('password');
             $table->rememberToken();
             $table->timestamps();
+        });
+
+        Schema::create('password_reset_tokens', function (Blueprint $table) {
+            $table->string('email')->primary();
+            $table->string('token');
+            $table->timestamp('created_at')->nullable();
         });
 
         // Includes this package's own migration that relaxes email/password

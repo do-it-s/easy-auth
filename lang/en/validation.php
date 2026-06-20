@@ -16,6 +16,9 @@ return [
     'password.confirmed' => 'The password confirmation does not match.',
     'password.min' => 'The password field must be at least :min characters.',
 
+    'token.required' => 'The token field is required.',
+    'token.string' => 'The token field must be a string.',
+
     'role.required' => 'The role field is required.',
     'role.in' => 'The selected role is invalid.',
 
