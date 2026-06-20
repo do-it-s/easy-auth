@@ -101,6 +101,22 @@ npm install
 
 Windowsで`file:`依存がsymlink権限エラーになる場合は`.npmrc`に`install-links=true`を追加してコピーインストールに切り替えること。
 
+### 7. 例外ハンドラがJSONを返せることを確認
+
+このパッケージの`/login`・`/profile-password`・`/login/reset-link-visibility`等は`api/*`配下ではなく、`Accept: application/json`ヘッダーによる通常のコンテンツネゴシエーション(`Request::expectsJson()`のデフォルト挙動)でJSONを返す設計になっている。
+
+`bootstrap/app.php`に次のような記述があると、`api/*`以外のルートでは常にHTMLレスポンスが強制され、`ValidationException`等が302リダイレクト(HTML)で返ってしまう。JS側は`response.json()`でその`<!DOCTYPE ...`をパースしようとして`Unexpected token '<' ... is not valid JSON`で失敗する:
+
+```php
+->withExceptions(function (Exceptions $exceptions): void {
+    $exceptions->shouldRenderJsonWhen(
+        fn (Request $request) => $request->is('api/*'),
+    );
+})
+```
+
+これはLaravelの新規プロジェクト雛形に含まれることがあるが、`routes/api.php`を持たないアプリではAPIルートを一切JSON化できないだけの制約になっている。easy-auth導入時はこのコールバックを削除する(空の`withExceptions`に戻す)か、`$request->is('api/*') || $request->expectsJson()`に書き換えること。
+
 ## 既知の制限・将来の検討事項
 
 - エラー表示(`#passkey-status`, `#login-status`への直接`textContent`書き込み)は現状ハードコードされており、アプリ側でトースト通知等の独自UIに差し替えることはできない。将来`initEasyAuth({ onMessage })`のようなコールバックオプションを追加して分離する余地がある(後方互換を崩さずに追加可能)。
