@@ -45,6 +45,25 @@ test('registering with an email and password redeems a pending invitation', func
     expect($invitation->refresh()->isUsed())->toBeTrue();
 });
 
+test('registering via an invitation redirects to home even with a stale intended url from an earlier unrelated visit', function () {
+    $this->get('/tenants/create'); // sets a stale session('url.intended') via EnsureProfileIsComplete
+
+    $tenant = Tenant::factory()->create();
+    $token = Invitation::generateToken();
+    Invitation::factory()->for($tenant)->create([
+        'token' => Invitation::hashToken($token),
+    ]);
+
+    $response = $this->withSession(['pending_invitation_token' => $token])->postJson('/profile-password', [
+        'name' => 'Taro',
+        'email' => 'taro@example.com',
+        'password' => 'password',
+        'password_confirmation' => 'password',
+    ]);
+
+    $response->assertOk()->assertJson(['redirect' => url('/')]);
+});
+
 test('registering with an email that is already taken fails validation', function () {
     User::factory()->create(['email' => 'taro@example.com']);
 

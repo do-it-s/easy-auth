@@ -45,3 +45,15 @@ test('completing the profile via json returns the intended redirect target', fun
     $response->assertOk()->assertJson(['redirect' => url('/tenants/create')]);
     expect($user->refresh()->name)->toBe('Taro');
 });
+
+test('completing the profile honors a redeemed invitation over a stale intended url', function () {
+    $user = User::factory()->create(['name' => '']);
+
+    $this->actingAs($user)->get('/tenants/create'); // sets a stale url.intended via EnsureProfileIsComplete
+
+    $response = $this->withSession(['post_registration_redirect' => route('home')])
+        ->actingAs($user)
+        ->patchJson('/profile', ['name' => 'Taro']);
+
+    $response->assertOk()->assertJson(['redirect' => url('/')]);
+});

@@ -64,8 +64,14 @@ class ProfileController extends Controller
 
         $invitation = $redeemPendingInvitation($request, $user);
 
-        if ($invitation?->is_backup_code) {
-            $request->session()->put('post_registration_redirect', route('tenants.backup-code.show', $invitation->tenant));
+        // Recorded for every redeemed invitation, not just backup codes:
+        // update() needs to know an invitation was in play so it can skip
+        // intended() in favor of this definitive destination (see the
+        // comment there).
+        if ($invitation) {
+            $request->session()->put('post_registration_redirect', $invitation->is_backup_code
+                ? route('tenants.backup-code.show', $invitation->tenant)
+                : route('home'));
         }
 
         $response = app(PasskeyRegistrationResponse::class)->withPasskey($passkey)->toResponse($request);
@@ -99,14 +105,24 @@ class ProfileController extends Controller
 
         $request->user()->update($validated);
 
-        $redirectTo = $request->session()->pull('post_registration_redirect', route('home'));
+        $postRegistrationRedirect = $request->session()->pull('post_registration_redirect');
+
+        // A redeemed invitation (tracked via post_registration_redirect, set
+        // in store() above) is a more definitive destination than whatever
+        // the session's stale url.intended happens to hold from an unrelated
+        // earlier visit. Only fall back to intended() for a plain signup
+        // with no invitation in play, where returning the guest to whatever
+        // protected page they originally tried to reach is the right call.
+        $redirect = $postRegistrationRedirect
+            ? redirect($postRegistrationRedirect)
+            : redirect()->intended(route('home'));
 
         if ($request->wantsJson()) {
             return response()->json([
-                'redirect' => redirect()->intended($redirectTo)->getTargetUrl(),
+                'redirect' => $redirect->getTargetUrl(),
             ]);
         }
 
-        return redirect()->intended($redirectTo);
+        return $redirect;
     }
 }

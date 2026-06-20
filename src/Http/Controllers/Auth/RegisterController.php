@@ -42,8 +42,16 @@ class RegisterController extends Controller
             ? route('tenants.backup-code.show', $invitation->tenant)
             : route('home');
 
+        // An invitation was just redeemed for a specific tenant, which is a
+        // more definitive destination than whatever the session's stale
+        // url.intended happens to hold from an unrelated earlier visit (e.g.
+        // a guest hitting a profile.complete-gated route days before using
+        // this invitation link). Only fall back to intended() when there
+        // was no invitation in play.
+        $redirect = $invitation ? redirect($redirectTo) : redirect()->intended($redirectTo);
+
         return response()->json([
-            'redirect' => redirect()->intended($redirectTo)->getTargetUrl(),
+            'redirect' => $redirect->getTargetUrl(),
             'device_uuid' => $device->uuid,
         ]);
     }
