@@ -50,6 +50,8 @@ Route::middleware('profile.complete')->group(function () {
     Route::post('/tenants', [TenantController::class, 'store'])->name('tenants.store');
     Route::get('/tenants/{tenant}/edit', [TenantController::class, 'edit'])->name('tenants.edit');
     Route::patch('/tenants/{tenant}', [TenantController::class, 'update'])->name('tenants.update');
+    Route::get('/tenants/{tenant}/delete', [TenantController::class, 'show'])->name('tenants.delete.show');
+    Route::delete('/tenants/{tenant}', [TenantController::class, 'destroy'])->name('tenants.delete');
     Route::post('/tenants/{tenant}/switch', [TenantSwitchController::class, 'switch'])->name('tenants.switch');
 
     Route::get('/tenants/{tenant}/backup-code', [BackupCodeController::class, 'show'])->name('tenants.backup-code.show');

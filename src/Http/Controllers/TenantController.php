@@ -45,11 +45,15 @@ class TenantController extends Controller
     }
 
     /**
-     * Display the specified resource.
+     * Show the confirmation page for deleting the tenant.
      */
-    public function show(Tenant $tenant)
+    public function show(Tenant $tenant): View
     {
-        //
+        $this->authorize('delete', $tenant);
+
+        return view('easy-auth::tenants.delete', [
+            'tenant' => $tenant,
+        ]);
     }
 
     /**
@@ -85,10 +89,23 @@ class TenantController extends Controller
     }
 
     /**
-     * Remove the specified resource from storage.
+     * Delete the tenant, along with its memberships and invitations
+     * (both cascade on tenant_id at the database level).
      */
-    public function destroy(Tenant $tenant)
+    public function destroy(Request $request, Tenant $tenant): RedirectResponse
     {
-        //
+        $this->authorize('delete', $tenant);
+
+        $validated = $request->validate([
+            'tenant_name' => ['required', 'string'],
+        ], trans('easy-auth::validation'));
+
+        if ($validated['tenant_name'] !== $tenant->name) {
+            return back()->withErrors(['tenant_name' => __('easy-auth::members.name_mismatch')]);
+        }
+
+        $tenant->delete();
+
+        return redirect()->route('home');
     }
 }

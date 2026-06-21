@@ -64,6 +64,18 @@ class TenantPolicy
     }
 
     /**
+     * Determine whether the user can delete the tenant entirely.
+     *
+     * Unlike leave(), administrators are exactly who this is for: there is
+     * no "step down and let someone else handle it" option when the
+     * tenant itself is what's being removed.
+     */
+    public function delete(EasyAuthUser $user, Tenant $tenant): bool
+    {
+        return $tenant->isAdministeredBy($user);
+    }
+
+    /**
      * Determine whether the user can switch their current tenant to this tenant.
      */
     public function switch(EasyAuthUser $user, Tenant $tenant): bool

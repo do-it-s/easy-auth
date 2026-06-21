@@ -10,4 +10,8 @@ return [
     'leave' => '脱退',
     'leave_heading' => ':tenantを脱退',
     'leave_confirm_label' => '脱退を確定するには「:tenant」と入力してください。',
+    'delete' => 'テナントを削除',
+    'delete_heading' => ':tenantを削除',
+    'delete_description' => 'テナントを完全に削除し、すべてのメンバーが除籍されます。元に戻すことはできません。',
+    'delete_confirm_label' => '削除を確定するには「:tenant」と入力してください。',
 ];
