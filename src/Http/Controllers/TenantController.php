@@ -31,10 +31,10 @@ class TenantController extends Controller
     public function store(Request $request): RedirectResponse
     {
         $validated = $request->validate([
-            'name' => ['required', 'string', 'max:255'],
+            'tenant_name' => ['required', 'string', 'max:255'],
         ], trans('easy-auth::validation'));
 
-        $tenant = Tenant::create($validated);
+        $tenant = Tenant::create(['name' => $validated['tenant_name']]);
 
         $tenant->users()->attach($request->user(), [
             'role' => Tenant::ADMIN_ROLE,
@@ -72,12 +72,12 @@ class TenantController extends Controller
         $this->authorize('update', $tenant);
 
         $validated = $request->validate([
-            'name' => ['required', 'string', 'max:255'],
+            'tenant_name' => ['required', 'string', 'max:255'],
             'member_invites_enabled' => ['nullable', 'boolean'],
         ], trans('easy-auth::validation'));
 
         $tenant->update([
-            'name' => $validated['name'],
+            'name' => $validated['tenant_name'],
             'member_invites_enabled' => $request->boolean('member_invites_enabled'),
         ]);
 

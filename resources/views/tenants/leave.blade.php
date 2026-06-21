@@ -8,18 +8,18 @@
             @csrf
             @method('DELETE')
 
-            <label for="name" class="block mb-1 text-sm">
+            <label for="tenant_name" class="block mb-1 text-sm">
                 {{ __('easy-auth::tenants.leave_confirm_label', ['tenant' => $tenant->name]) }}
             </label>
 
             <input
-                id="name"
-                name="name"
+                id="tenant_name"
+                name="tenant_name"
                 type="text"
                 class="w-full mb-2 px-2 py-1.5 border border-[#19140035] dark:border-[#3E3E3A] rounded-sm text-sm"
             >
 
-            @error('name')
+            @error('tenant_name')
                 <p class="mb-2 text-sm text-[#F53003] dark:text-[#FF4433]">{{ $message }}</p>
             @enderror
 

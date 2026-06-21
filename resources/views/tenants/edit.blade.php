@@ -4,7 +4,7 @@
     <div class="w-full max-w-sm">
         <h1 class="mb-4 text-lg">{{ __('easy-auth::tenants.edit_heading') }}</h1>
 
-        @error('name')
+        @error('tenant_name')
             <p class="mb-4 text-[#F53003] dark:text-[#FF4433]">{{ $message }}</p>
         @enderror
 
@@ -12,13 +12,13 @@
             @csrf
             @method('PATCH')
 
-            <label for="name" class="block mb-1 text-sm">{{ __('easy-auth::tenants.name') }}</label>
+            <label for="tenant_name" class="block mb-1 text-sm">{{ __('easy-auth::tenants.name') }}</label>
 
             <input
-                id="name"
-                name="name"
+                id="tenant_name"
+                name="tenant_name"
                 type="text"
-                value="{{ old('name', $tenant->name) }}"
+                value="{{ old('tenant_name', $tenant->name) }}"
                 class="w-full mb-4 px-2 py-1.5 border border-[#19140035] dark:border-[#3E3E3A] rounded-sm text-sm"
             >
 

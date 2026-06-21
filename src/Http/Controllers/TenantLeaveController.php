@@ -32,11 +32,11 @@ class TenantLeaveController extends Controller
         $this->authorize('leave', $tenant);
 
         $validated = $request->validate([
-            'name' => ['required', 'string'],
+            'tenant_name' => ['required', 'string'],
         ], trans('easy-auth::validation'));
 
-        if ($validated['name'] !== $tenant->name) {
-            return back()->withErrors(['name' => __('easy-auth::members.name_mismatch')]);
+        if ($validated['tenant_name'] !== $tenant->name) {
+            return back()->withErrors(['tenant_name' => __('easy-auth::members.name_mismatch')]);
         }
 
         $tenant->users()->detach($user);

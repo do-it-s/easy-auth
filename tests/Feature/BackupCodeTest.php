@@ -67,7 +67,7 @@ test('creating a tenant redirects to the backup code page', function () {
     $user = User::factory()->create();
 
     $response = $this->actingAs($user)->post(route('tenants.store'), [
-        'name' => 'New Tenant',
+        'tenant_name' => 'New Tenant',
     ]);
 
     $tenant = Tenant::where('name', 'New Tenant')->first();

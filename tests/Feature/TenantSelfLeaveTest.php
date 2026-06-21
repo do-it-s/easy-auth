@@ -40,7 +40,7 @@ test('member can leave the tenant when the typed tenant name matches', function 
     $tenant->users()->attach($user, ['role' => Tenant::MEMBER_ROLE, 'last_accessed_at' => now()]);
 
     $response = $this->actingAs($user)->delete(route('tenants.leave', $tenant), [
-        'name' => 'Current Tenant',
+        'tenant_name' => 'Current Tenant',
     ]);
 
     $response->assertRedirect(route('home'));
@@ -53,11 +53,11 @@ test('member cannot leave when the typed tenant name does not match', function (
     $tenant->users()->attach($user, ['role' => Tenant::MEMBER_ROLE, 'last_accessed_at' => now()]);
 
     $response = $this->actingAs($user)->delete(route('tenants.leave', $tenant), [
-        'name' => 'Wrong Name',
+        'tenant_name' => 'Wrong Name',
     ]);
 
     $response->assertRedirect();
-    $response->assertSessionHasErrors('name');
+    $response->assertSessionHasErrors('tenant_name');
     expect($tenant->hasMember($user))->toBeTrue();
 });
 
@@ -67,11 +67,11 @@ test('member cannot leave when the typed tenant name is blank', function () {
     $tenant->users()->attach($user, ['role' => Tenant::MEMBER_ROLE, 'last_accessed_at' => now()]);
 
     $response = $this->actingAs($user)->delete(route('tenants.leave', $tenant), [
-        'name' => '',
+        'tenant_name' => '',
     ]);
 
     $response->assertRedirect();
-    $response->assertSessionHasErrors('name');
+    $response->assertSessionHasErrors('tenant_name');
     expect($tenant->hasMember($user))->toBeTrue();
 });
 
@@ -84,7 +84,7 @@ test('admin cannot leave even when other admins exist', function () {
     $tenant->users()->attach($admin2, ['role' => Tenant::ADMIN_ROLE, 'last_accessed_at' => now()]);
 
     $response = $this->actingAs($admin1)->delete(route('tenants.leave', $tenant), [
-        'name' => 'Current Tenant',
+        'tenant_name' => 'Current Tenant',
     ]);
 
     $response->assertForbidden();
@@ -97,7 +97,7 @@ test('last admin cannot leave', function () {
     $tenant->users()->attach($admin, ['role' => Tenant::ADMIN_ROLE, 'last_accessed_at' => now()]);
 
     $response = $this->actingAs($admin)->delete(route('tenants.leave', $tenant), [
-        'name' => 'Current Tenant',
+        'tenant_name' => 'Current Tenant',
     ]);
 
     $response->assertForbidden();
@@ -109,6 +109,6 @@ test('non-member cannot leave a tenant', function () {
     $tenant = Tenant::factory()->create(['name' => 'Current Tenant']);
 
     $this->actingAs($outsider)->delete(route('tenants.leave', $tenant), [
-        'name' => 'Current Tenant',
+        'tenant_name' => 'Current Tenant',
     ])->assertForbidden();
 });

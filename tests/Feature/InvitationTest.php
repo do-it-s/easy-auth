@@ -259,7 +259,7 @@ test('admin can update tenant settings including member invites toggle', functio
     attachTenantMember($tenant, $admin, Tenant::ADMIN_ROLE);
 
     $response = $this->actingAs($admin)->patch(route('tenants.update', $tenant), [
-        'name' => 'Renamed Tenant',
+        'tenant_name' => 'Renamed Tenant',
         'member_invites_enabled' => false,
     ]);
 
