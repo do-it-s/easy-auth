@@ -12,12 +12,12 @@
 
 ### 1. Composerで依存追加
 
-Packagistには未公開のため、ローカルパスリポジトリとして参照する。
+Packagistには未公開のため、GitHubリポジトリをVCSリポジトリとして参照する。
 
 ```json
 {
     "repositories": [
-        { "type": "path", "url": "../easy-auth", "options": { "symlink": false } }
+        { "type": "vcs", "url": "https://github.com/do-it-s/easy-auth.git" }
     ],
     "require": {
         "do-it-s/easy-auth": "dev-main"
@@ -25,7 +25,11 @@ Packagistには未公開のため、ローカルパスリポジトリとして�
 }
 ```
 
-`symlink: false`はWindowsでのシンボリックリンク権限問題を避けるため(コピーインストールになる)。easy-auth側を編集した後、`composer update do-it-s/easy-auth`を実行しても**ロックファイルの参照(バージョン)が変わらないため再コピーされないことがある**。その場合は`vendor/do-it-s/easy-auth`を削除して`composer install`を再実行すること(削除されたパッケージとして検出され、強制的に再コピーされる)。
+公開リポジトリなので認証情報の設定は不要。`dev-main`は`main`ブランチの最新コミットを指す。easy-auth側が更新された後にその変更を取り込みたい場合は、次を実行する:
+
+```
+composer update do-it-s/easy-auth
+```
 
 ### 2. `laravel/passkeys`のmigrationをpublish
 
