@@ -2,6 +2,12 @@
 
 パスキー(WebAuthn) + デバイスUUID束縛によるパスワードレス認証と、招待チェーン式のテナント/ロールモデルを提供するLaravelパッケージ。`laravel/passkeys`をラップし、その上に「パスキー非対応時のメール+パスワードフォールバック」「テナント単位の招待/バックアップコード」を実装している。
 
+## ⚠️ ベータ公開 / Beta Notice
+
+このパッケージはまだPackagistに登録していないベータ段階です。作者はWebアプリケーション開発者であり、認証・セキュリティの専門家ではありません。設計判断には現時点で未解決の課題も残っています(下記「既知の制限・将来の検討事項」を参照)。これらを含む既知の課題を解消しながら、将来的にPackagistへの正式登録を目指しています。認証・セキュリティの知見をお持ちの方からのご指摘・フィードバックを歓迎します。
+
+This package is in beta and not yet registered on Packagist. The author is a web application developer, not an authentication or security specialist, and some design decisions still have open questions (see "Known Limitations and Future Considerations" below). The goal is to register on Packagist once these and other known issues are addressed. Feedback from anyone with authentication or security expertise is very welcome.
+
 ## 前提
 
 - PHP ^8.3, Laravel ^13.0
