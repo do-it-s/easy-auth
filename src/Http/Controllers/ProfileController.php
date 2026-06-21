@@ -124,4 +124,47 @@ class ProfileController extends Controller
 
         return $redirect;
     }
+
+    /**
+     * Show the confirmation page for deleting the account on the
+     * authenticated user's own initiative.
+     */
+    public function show(Request $request): View
+    {
+        $this->authorize('delete', $request->user());
+
+        return view('easy-auth::profile.delete', [
+            'user' => $request->user(),
+        ]);
+    }
+
+    /**
+     * Delete the account on the authenticated user's own initiative.
+     */
+    public function destroy(Request $request): RedirectResponse
+    {
+        $user = $request->user();
+
+        $this->authorize('delete', $user);
+
+        $validated = $request->validate([
+            'name' => ['required', 'string'],
+        ], trans('easy-auth::validation'));
+
+        if ($validated['name'] !== $user->name) {
+            return back()->withErrors(['name' => __('easy-auth::account_deletion.name_mismatch')]);
+        }
+
+        // Logout must run before delete(): SessionGuard::logout() cycles and
+        // saves the remember token, which would re-insert the row Eloquent
+        // had just marked as deleted (save() inserts once exists is false).
+        Auth::guard('web')->logout();
+
+        $user->delete();
+
+        $request->session()->invalidate();
+        $request->session()->regenerateToken();
+
+        return redirect()->route('account-deletion.deleted');
+    }
 }

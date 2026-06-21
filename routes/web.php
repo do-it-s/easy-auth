@@ -41,6 +41,8 @@ Route::middleware(array_filter(['guest', config('passkeys.throttle')]))->group(f
 Route::middleware('auth')->group(function () {
     Route::get('/profile/edit', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
+    Route::get('/profile/delete', [ProfileController::class, 'show'])->name('profile.delete.show');
+    Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.delete');
 });
 
 Route::middleware('profile.complete')->group(function () {

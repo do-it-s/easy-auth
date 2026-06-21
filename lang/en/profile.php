@@ -12,4 +12,6 @@ return [
     'register_with_password' => 'Register with email and password',
     'edit_heading' => 'Edit your profile',
     'save' => 'Save',
+    'delete_heading' => 'Delete your account',
+    'delete_description' => 'This permanently deletes your account and removes you from every tenant you belong to. This cannot be undone.',
 ];

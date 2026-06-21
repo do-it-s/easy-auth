@@ -8,6 +8,7 @@ use DoITs\EasyAuth\Models\Invitation;
 use DoITs\EasyAuth\Models\Tenant;
 use DoITs\EasyAuth\Policies\InvitationPolicy;
 use DoITs\EasyAuth\Policies\TenantPolicy;
+use DoITs\EasyAuth\Policies\UserPolicy;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Route;
@@ -50,5 +51,6 @@ class EasyAuthServiceProvider extends ServiceProvider
 
         Gate::policy(Tenant::class, TenantPolicy::class);
         Gate::policy(Invitation::class, InvitationPolicy::class);
+        Gate::policy(config('auth.providers.users.model'), UserPolicy::class);
     }
 }
