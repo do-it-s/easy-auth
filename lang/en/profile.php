@@ -5,6 +5,7 @@ return [
     'name' => 'Name',
     'register_with_passkey' => 'Register and get started with a passkey',
     'passkey_unavailable' => "Can't use a passkey? Use this instead",
+    'passkey_backup_eligible_rejected' => "This passkey is synced across multiple devices and can't be used here. Please create a new passkey on this device only, or use email and password instead.",
     'register_name' => 'Name',
     'register_email' => 'Email address',
     'register_password' => 'Password',

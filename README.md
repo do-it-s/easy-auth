@@ -131,3 +131,5 @@ Windowsで`file:`依存がsymlink権限エラーになる場合は`.npmrc`に`in
 ## 既知の制限・将来の検討事項
 
 - エラー表示(`#passkey-status`, `#login-status`への直接`textContent`書き込み)は現状ハードコードされており、アプリ側でトースト通知等の独自UIに差し替えることはできない。将来`initEasyAuth({ onMessage })`のようなコールバックオプションを追加して分離する余地がある(後方互換を崩さずに追加可能)。
+- パスキー登録時のWebAuthnオプション(`userVerification`・`residentKey`)は`laravel/passkeys`のデフォルト値(いずれも`required`)に委ねており、easy-auth側で上書きする設定項目は無い。
+- 登録時にAuthenticatorのBE(Backup Eligible)フラグを確認し、クラウド同期可能なパスキー(iCloudキーチェーン等で複数デバイスに同期されるもの)の登録は拒否する(`DoITs\EasyAuth\Actions\RejectSyncedPasskey`)。デバイスUUID束縛が前提とする「特定の1台に紐づく」という保証を、同期パスキーは満たさないため。現時点では全ホストアプリ共通の固定ルールであり、サービス単位で許可/不許可を切り替えられる設定項目はまだ無い。

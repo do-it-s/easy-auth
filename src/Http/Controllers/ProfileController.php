@@ -3,6 +3,7 @@
 namespace DoITs\EasyAuth\Http\Controllers;
 
 use DoITs\EasyAuth\Actions\RedeemPendingInvitation;
+use DoITs\EasyAuth\Actions\RejectSyncedPasskey;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
@@ -45,8 +46,14 @@ class ProfileController extends Controller
     /**
      * Create the user, registering its passkey and device UUID.
      */
-    public function store(PasskeyRegistrationRequest $request, StorePasskey $storePasskey, RedeemPendingInvitation $redeemPendingInvitation): Response
-    {
+    public function store(
+        PasskeyRegistrationRequest $request,
+        StorePasskey $storePasskey,
+        RejectSyncedPasskey $rejectSyncedPasskey,
+        RedeemPendingInvitation $redeemPendingInvitation
+    ): Response {
+        $rejectSyncedPasskey($request->credential());
+
         $userModel = config('auth.providers.users.model');
 
         $user = $userModel::create(['name' => '']);

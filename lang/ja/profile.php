@@ -5,6 +5,7 @@ return [
     'name' => 'お名前',
     'register_with_passkey' => 'パスキーを登録して始める',
     'passkey_unavailable' => 'パスキーが使えない場合はこちら',
+    'passkey_backup_eligible_rejected' => 'このパスキーは複数のデバイス間で同期される設定になっているため使用できません。このデバイス専用のパスキーを新しく作成するか、メールアドレスとパスワードでの登録をお試しください。',
     'register_name' => 'お名前',
     'register_email' => 'メールアドレス',
     'register_password' => 'パスワード',
