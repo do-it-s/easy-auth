@@ -14,6 +14,5 @@ return [
     'no_members' => 'No members.',
     'last_admin_cannot_be_demoted' => 'The last administrator cannot be demoted.',
     'last_admin_cannot_be_removed' => 'The last administrator cannot be removed.',
-    'last_admin_cannot_leave' => 'The last administrator cannot leave.',
     'name_mismatch' => 'The name you entered does not match.',
 ];

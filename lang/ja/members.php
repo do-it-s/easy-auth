@@ -14,6 +14,5 @@ return [
     'no_members' => 'メンバーはいません。',
     'last_admin_cannot_be_demoted' => '最後の管理者は降格できません。',
     'last_admin_cannot_be_removed' => '最後の管理者は脱退させられません。',
-    'last_admin_cannot_leave' => '最後の管理者は脱退できません。',
     'name_mismatch' => '入力された名前が一致しません。',
 ];

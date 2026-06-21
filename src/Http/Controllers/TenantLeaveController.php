@@ -39,13 +39,6 @@ class TenantLeaveController extends Controller
             return back()->withErrors(['name' => __('easy-auth::members.name_mismatch')]);
         }
 
-        if ($tenant->isAdministeredBy($user)) {
-            $adminCount = $tenant->users()->wherePivot('role', Tenant::ADMIN_ROLE)->count();
-            if ($adminCount <= 1) {
-                return back()->withErrors(['name' => __('easy-auth::members.last_admin_cannot_leave')]);
-            }
-        }
-
         $tenant->users()->detach($user);
 
         return redirect()->route('home');

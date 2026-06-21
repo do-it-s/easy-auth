@@ -22,6 +22,18 @@ test('non-member cannot view the leave confirmation page', function () {
         ->assertForbidden();
 });
 
+test('admin cannot view the leave confirmation page', function () {
+    $admin1 = User::factory()->create(['name' => 'Admin1']);
+    $admin2 = User::factory()->create(['name' => 'Admin2']);
+    $tenant = Tenant::factory()->create();
+
+    $tenant->users()->attach($admin1, ['role' => Tenant::ADMIN_ROLE, 'last_accessed_at' => now()]);
+    $tenant->users()->attach($admin2, ['role' => Tenant::ADMIN_ROLE, 'last_accessed_at' => now()]);
+
+    $this->actingAs($admin1)->get(route('tenants.leave.show', $tenant))
+        ->assertForbidden();
+});
+
 test('member can leave the tenant when the typed tenant name matches', function () {
     $user = User::factory()->create(['name' => 'Member']);
     $tenant = Tenant::factory()->create(['name' => 'Current Tenant']);
@@ -63,7 +75,7 @@ test('member cannot leave when the typed tenant name is blank', function () {
     expect($tenant->hasMember($user))->toBeTrue();
 });
 
-test('admin can leave when other admins exist', function () {
+test('admin cannot leave even when other admins exist', function () {
     $admin1 = User::factory()->create(['name' => 'Admin1']);
     $admin2 = User::factory()->create(['name' => 'Admin2']);
     $tenant = Tenant::factory()->create(['name' => 'Current Tenant']);
@@ -75,8 +87,8 @@ test('admin can leave when other admins exist', function () {
         'name' => 'Current Tenant',
     ]);
 
-    $response->assertRedirect(route('home'));
-    expect($tenant->hasMember($admin1))->toBeFalse();
+    $response->assertForbidden();
+    expect($tenant->hasMember($admin1))->toBeTrue();
 });
 
 test('last admin cannot leave', function () {
@@ -88,8 +100,7 @@ test('last admin cannot leave', function () {
         'name' => 'Current Tenant',
     ]);
 
-    $response->assertRedirect();
-    $response->assertSessionHasErrors('name');
+    $response->assertForbidden();
     expect($tenant->hasMember($admin))->toBeTrue();
 });
 

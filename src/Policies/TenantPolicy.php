@@ -41,9 +41,17 @@ class TenantPolicy
 
     /**
      * Determine whether the user can leave the tenant on their own.
+     *
+     * Administrators are excluded: stepping down is an abdication of
+     * responsibility that must be carried out by another administrator
+     * (via removeMember), not a self-service action.
      */
     public function leave(EasyAuthUser $user, Tenant $tenant): bool
     {
+        if ($tenant->isAdministeredBy($user)) {
+            return false;
+        }
+
         return $tenant->hasMember($user);
     }
 
