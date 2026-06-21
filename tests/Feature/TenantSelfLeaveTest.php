@@ -8,7 +8,7 @@ test('leave confirmation page is shown to a member', function () {
     $tenant = Tenant::factory()->create(['name' => 'Current Tenant']);
     $tenant->users()->attach($user, ['role' => Tenant::MEMBER_ROLE, 'last_accessed_at' => now()]);
 
-    $response = $this->actingAs($user)->get(route('tenants.members.leave.show', $tenant));
+    $response = $this->actingAs($user)->get(route('tenants.leave.show', $tenant));
 
     $response->assertOk();
     $response->assertSee('Type Current Tenant to confirm you want to leave.');
@@ -18,7 +18,7 @@ test('non-member cannot view the leave confirmation page', function () {
     $outsider = User::factory()->create(['name' => 'Outsider']);
     $tenant = Tenant::factory()->create();
 
-    $this->actingAs($outsider)->get(route('tenants.members.leave.show', $tenant))
+    $this->actingAs($outsider)->get(route('tenants.leave.show', $tenant))
         ->assertForbidden();
 });
 
@@ -27,7 +27,7 @@ test('member can leave the tenant when the typed tenant name matches', function 
     $tenant = Tenant::factory()->create(['name' => 'Current Tenant']);
     $tenant->users()->attach($user, ['role' => Tenant::MEMBER_ROLE, 'last_accessed_at' => now()]);
 
-    $response = $this->actingAs($user)->delete(route('tenants.members.leave', $tenant), [
+    $response = $this->actingAs($user)->delete(route('tenants.leave', $tenant), [
         'name' => 'Current Tenant',
     ]);
 
@@ -40,7 +40,7 @@ test('member cannot leave when the typed tenant name does not match', function (
     $tenant = Tenant::factory()->create(['name' => 'Current Tenant']);
     $tenant->users()->attach($user, ['role' => Tenant::MEMBER_ROLE, 'last_accessed_at' => now()]);
 
-    $response = $this->actingAs($user)->delete(route('tenants.members.leave', $tenant), [
+    $response = $this->actingAs($user)->delete(route('tenants.leave', $tenant), [
         'name' => 'Wrong Name',
     ]);
 
@@ -54,7 +54,7 @@ test('member cannot leave when the typed tenant name is blank', function () {
     $tenant = Tenant::factory()->create();
     $tenant->users()->attach($user, ['role' => Tenant::MEMBER_ROLE, 'last_accessed_at' => now()]);
 
-    $response = $this->actingAs($user)->delete(route('tenants.members.leave', $tenant), [
+    $response = $this->actingAs($user)->delete(route('tenants.leave', $tenant), [
         'name' => '',
     ]);
 
@@ -71,7 +71,7 @@ test('admin can leave when other admins exist', function () {
     $tenant->users()->attach($admin1, ['role' => Tenant::ADMIN_ROLE, 'last_accessed_at' => now()]);
     $tenant->users()->attach($admin2, ['role' => Tenant::ADMIN_ROLE, 'last_accessed_at' => now()]);
 
-    $response = $this->actingAs($admin1)->delete(route('tenants.members.leave', $tenant), [
+    $response = $this->actingAs($admin1)->delete(route('tenants.leave', $tenant), [
         'name' => 'Current Tenant',
     ]);
 
@@ -84,7 +84,7 @@ test('last admin cannot leave', function () {
     $tenant = Tenant::factory()->create(['name' => 'Current Tenant']);
     $tenant->users()->attach($admin, ['role' => Tenant::ADMIN_ROLE, 'last_accessed_at' => now()]);
 
-    $response = $this->actingAs($admin)->delete(route('tenants.members.leave', $tenant), [
+    $response = $this->actingAs($admin)->delete(route('tenants.leave', $tenant), [
         'name' => 'Current Tenant',
     ]);
 
@@ -97,7 +97,7 @@ test('non-member cannot leave a tenant', function () {
     $outsider = User::factory()->create(['name' => 'Outsider']);
     $tenant = Tenant::factory()->create(['name' => 'Current Tenant']);
 
-    $this->actingAs($outsider)->delete(route('tenants.members.leave', $tenant), [
+    $this->actingAs($outsider)->delete(route('tenants.leave', $tenant), [
         'name' => 'Current Tenant',
     ])->assertForbidden();
 });

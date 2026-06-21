@@ -4,7 +4,7 @@
     <div class="w-full max-w-sm">
         <h1 class="mb-4 text-lg">{{ __('easy-auth::tenants.leave_heading', ['tenant' => $tenant->name]) }}</h1>
 
-        <form method="POST" action="{{ route('tenants.members.leave', $tenant) }}">
+        <form method="POST" action="{{ route('tenants.leave', $tenant) }}">
             @csrf
             @method('DELETE')
 

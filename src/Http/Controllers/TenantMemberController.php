@@ -76,46 +76,4 @@ class TenantMemberController extends Controller
 
         return redirect()->route('tenants.members.index', $tenant);
     }
-
-    /**
-     * Show the confirmation page for leaving the tenant on the
-     * authenticated user's own initiative.
-     */
-    public function showLeave(Tenant $tenant): View
-    {
-        $this->authorize('leave', $tenant);
-
-        return view('easy-auth::tenants.leave', [
-            'tenant' => $tenant,
-        ]);
-    }
-
-    /**
-     * Leave the tenant on the authenticated user's own initiative.
-     */
-    public function leave(Request $request, Tenant $tenant): RedirectResponse
-    {
-        $user = $request->user();
-
-        $this->authorize('leave', $tenant);
-
-        $validated = $request->validate([
-            'name' => ['required', 'string'],
-        ], trans('easy-auth::validation'));
-
-        if ($validated['name'] !== $tenant->name) {
-            return back()->withErrors(['name' => __('easy-auth::members.name_mismatch')]);
-        }
-
-        if ($tenant->isAdministeredBy($user)) {
-            $adminCount = $tenant->users()->wherePivot('role', Tenant::ADMIN_ROLE)->count();
-            if ($adminCount <= 1) {
-                return back()->withErrors(['name' => __('easy-auth::members.last_admin_cannot_leave')]);
-            }
-        }
-
-        $tenant->users()->detach($user);
-
-        return redirect()->route('home');
-    }
 }

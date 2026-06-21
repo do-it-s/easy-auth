@@ -10,6 +10,7 @@ use DoITs\EasyAuth\Http\Controllers\InvitationController;
 use DoITs\EasyAuth\Http\Controllers\InvitationRedemptionController;
 use DoITs\EasyAuth\Http\Controllers\ProfileController;
 use DoITs\EasyAuth\Http\Controllers\TenantController;
+use DoITs\EasyAuth\Http\Controllers\TenantLeaveController;
 use DoITs\EasyAuth\Http\Controllers\TenantMemberController;
 use DoITs\EasyAuth\Http\Controllers\TenantSwitchController;
 use Illuminate\Support\Facades\Route;
@@ -55,8 +56,8 @@ Route::middleware('profile.complete')->group(function () {
     Route::get('/tenants/{tenant}/members', [TenantMemberController::class, 'index'])->name('tenants.members.index');
     Route::patch('/tenants/{tenant}/members/{user}', [TenantMemberController::class, 'update'])->name('tenants.members.update');
     Route::delete('/tenants/{tenant}/members/{user}', [TenantMemberController::class, 'destroy'])->name('tenants.members.destroy');
-    Route::get('/tenants/{tenant}/leave', [TenantMemberController::class, 'showLeave'])->name('tenants.members.leave.show');
-    Route::delete('/tenants/{tenant}/leave', [TenantMemberController::class, 'leave'])->name('tenants.members.leave');
+    Route::get('/tenants/{tenant}/leave', [TenantLeaveController::class, 'show'])->name('tenants.leave.show');
+    Route::delete('/tenants/{tenant}/leave', [TenantLeaveController::class, 'destroy'])->name('tenants.leave');
 
     Route::get('/tenants/{tenant}/invitations', [InvitationController::class, 'index'])->name('tenants.invitations.index');
     Route::get('/tenants/{tenant}/invitations/create', [InvitationController::class, 'create'])->name('tenants.invitations.create');

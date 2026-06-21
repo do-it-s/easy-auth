@@ -32,7 +32,7 @@ class AccountDeletionController extends Controller
 
     /**
      * Delete the account once the user re-types their own name to confirm
-     * (the same type-to-confirm pattern TenantMemberController::leave()
+     * (the same type-to-confirm pattern TenantLeaveController::destroy()
      * uses, just confirming against the user's own name instead of a
      * tenant's). Unlike that flow, this does not block a sole tenant
      * admin from going through: the user is already locked out with no
