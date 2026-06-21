@@ -3,42 +3,41 @@
 use DoITs\EasyAuth\Models\Tenant;
 use DoITs\EasyAuth\Tests\Fixtures\User;
 
-test('profile edit page shows the leave section for the current tenant', function () {
+test('leave confirmation page is shown to a member', function () {
     $user = User::factory()->create(['name' => 'Member']);
     $tenant = Tenant::factory()->create(['name' => 'Current Tenant']);
     $tenant->users()->attach($user, ['role' => Tenant::MEMBER_ROLE, 'last_accessed_at' => now()]);
 
-    $response = $this->actingAs($user)->get(route('profile.edit'));
+    $response = $this->actingAs($user)->get(route('tenants.members.leave.show', $tenant));
 
     $response->assertOk();
-    $response->assertSee('Type your name to leave Current Tenant');
+    $response->assertSee('Type Current Tenant to confirm you want to leave.');
 });
 
-test('profile edit page hides the leave section when the user has no tenant', function () {
-    $user = User::factory()->create(['name' => 'Member']);
-
-    $response = $this->actingAs($user)->get(route('profile.edit'));
-
-    $response->assertOk();
-    $response->assertDontSee('Type your name to leave', false);
-});
-
-test('member can leave the tenant when the typed name matches', function () {
-    $user = User::factory()->create(['name' => 'Member']);
+test('non-member cannot view the leave confirmation page', function () {
+    $outsider = User::factory()->create(['name' => 'Outsider']);
     $tenant = Tenant::factory()->create();
+
+    $this->actingAs($outsider)->get(route('tenants.members.leave.show', $tenant))
+        ->assertForbidden();
+});
+
+test('member can leave the tenant when the typed tenant name matches', function () {
+    $user = User::factory()->create(['name' => 'Member']);
+    $tenant = Tenant::factory()->create(['name' => 'Current Tenant']);
     $tenant->users()->attach($user, ['role' => Tenant::MEMBER_ROLE, 'last_accessed_at' => now()]);
 
     $response = $this->actingAs($user)->delete(route('tenants.members.leave', $tenant), [
-        'name' => 'Member',
+        'name' => 'Current Tenant',
     ]);
 
-    $response->assertRedirect(route('profile.edit'));
+    $response->assertRedirect(route('home'));
     expect($tenant->hasMember($user))->toBeFalse();
 });
 
-test('member cannot leave when the typed name does not match', function () {
+test('member cannot leave when the typed tenant name does not match', function () {
     $user = User::factory()->create(['name' => 'Member']);
-    $tenant = Tenant::factory()->create();
+    $tenant = Tenant::factory()->create(['name' => 'Current Tenant']);
     $tenant->users()->attach($user, ['role' => Tenant::MEMBER_ROLE, 'last_accessed_at' => now()]);
 
     $response = $this->actingAs($user)->delete(route('tenants.members.leave', $tenant), [
@@ -46,11 +45,11 @@ test('member cannot leave when the typed name does not match', function () {
     ]);
 
     $response->assertRedirect();
-    $response->assertSessionHasErrors('name', null, 'leaveTenant');
+    $response->assertSessionHasErrors('name');
     expect($tenant->hasMember($user))->toBeTrue();
 });
 
-test('member cannot leave when the typed name is blank', function () {
+test('member cannot leave when the typed tenant name is blank', function () {
     $user = User::factory()->create(['name' => 'Member']);
     $tenant = Tenant::factory()->create();
     $tenant->users()->attach($user, ['role' => Tenant::MEMBER_ROLE, 'last_accessed_at' => now()]);
@@ -60,45 +59,45 @@ test('member cannot leave when the typed name is blank', function () {
     ]);
 
     $response->assertRedirect();
-    $response->assertSessionHasErrors('name', null, 'leaveTenant');
+    $response->assertSessionHasErrors('name');
     expect($tenant->hasMember($user))->toBeTrue();
 });
 
 test('admin can leave when other admins exist', function () {
     $admin1 = User::factory()->create(['name' => 'Admin1']);
     $admin2 = User::factory()->create(['name' => 'Admin2']);
-    $tenant = Tenant::factory()->create();
+    $tenant = Tenant::factory()->create(['name' => 'Current Tenant']);
 
     $tenant->users()->attach($admin1, ['role' => Tenant::ADMIN_ROLE, 'last_accessed_at' => now()]);
     $tenant->users()->attach($admin2, ['role' => Tenant::ADMIN_ROLE, 'last_accessed_at' => now()]);
 
     $response = $this->actingAs($admin1)->delete(route('tenants.members.leave', $tenant), [
-        'name' => 'Admin1',
+        'name' => 'Current Tenant',
     ]);
 
-    $response->assertRedirect(route('profile.edit'));
+    $response->assertRedirect(route('home'));
     expect($tenant->hasMember($admin1))->toBeFalse();
 });
 
 test('last admin cannot leave', function () {
     $admin = User::factory()->create(['name' => 'Admin']);
-    $tenant = Tenant::factory()->create();
+    $tenant = Tenant::factory()->create(['name' => 'Current Tenant']);
     $tenant->users()->attach($admin, ['role' => Tenant::ADMIN_ROLE, 'last_accessed_at' => now()]);
 
     $response = $this->actingAs($admin)->delete(route('tenants.members.leave', $tenant), [
-        'name' => 'Admin',
+        'name' => 'Current Tenant',
     ]);
 
     $response->assertRedirect();
-    $response->assertSessionHasErrors('name', null, 'leaveTenant');
+    $response->assertSessionHasErrors('name');
     expect($tenant->hasMember($admin))->toBeTrue();
 });
 
 test('non-member cannot leave a tenant', function () {
     $outsider = User::factory()->create(['name' => 'Outsider']);
-    $tenant = Tenant::factory()->create();
+    $tenant = Tenant::factory()->create(['name' => 'Current Tenant']);
 
     $this->actingAs($outsider)->delete(route('tenants.members.leave', $tenant), [
-        'name' => 'Outsider',
+        'name' => 'Current Tenant',
     ])->assertForbidden();
 });

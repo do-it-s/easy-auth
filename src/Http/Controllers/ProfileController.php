@@ -90,7 +90,6 @@ class ProfileController extends Controller
     {
         return view('easy-auth::profile.edit', [
             'user' => $request->user(),
-            'currentTenant' => $request->user()->currentTenant(),
         ]);
     }
 

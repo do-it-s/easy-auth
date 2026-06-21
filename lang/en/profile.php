@@ -12,6 +12,4 @@ return [
     'register_with_password' => 'Register with email and password',
     'edit_heading' => 'Edit your profile',
     'save' => 'Save',
-    'leave' => 'Leave',
-    'leave_confirm_label' => 'Type your name to leave :tenant',
 ];

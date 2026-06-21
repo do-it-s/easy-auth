@@ -32,10 +32,12 @@ class AccountDeletionController extends Controller
 
     /**
      * Delete the account once the user re-types their own name to confirm
-     * (mirrors TenantMemberController::leave()'s confirmation pattern).
-     * Unlike that flow, this does not block a sole tenant admin from
-     * going through: the user is already locked out with no alternative,
-     * so blocking deletion here would just be a permanent dead end.
+     * (the same type-to-confirm pattern TenantMemberController::leave()
+     * uses, just confirming against the user's own name instead of a
+     * tenant's). Unlike that flow, this does not block a sole tenant
+     * admin from going through: the user is already locked out with no
+     * alternative, so blocking deletion here would just be a permanent
+     * dead end.
      */
     public function destroy(Request $request, int $id): RedirectResponse
     {

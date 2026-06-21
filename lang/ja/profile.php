@@ -12,6 +12,4 @@ return [
     'register_with_password' => 'メールアドレスで登録する',
     'edit_heading' => 'プロフィールを入力',
     'save' => '保存',
-    'leave' => '脱退',
-    'leave_confirm_label' => ':tenantを脱退するには名前を入力してください',
 ];
