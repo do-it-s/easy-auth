@@ -96,6 +96,23 @@ test('a user with a registered device cannot log in from a different device, and
     Notification::assertSentTo($user, AccountDeletionLinkNotification::class);
 });
 
+test('a user with no registered device cannot log in when a device UUID is sent, and is emailed an account deletion link', function () {
+    Notification::fake();
+    $user = User::factory()->create([
+        'email' => 'taro@example.com',
+        'password' => 'password',
+    ]);
+
+    $response = $this->postJson('/login', [
+        'email' => 'taro@example.com',
+        'password' => 'password',
+    ], ['X-Device-Uuid' => (string) Str::uuid()]);
+
+    $response->assertUnprocessable()->assertJsonValidationErrors('email');
+    $this->assertGuest();
+    Notification::assertSentTo($user, AccountDeletionLinkNotification::class);
+});
+
 test('the device-mismatch response is indistinguishable from a wrong-password response', function () {
     Notification::fake();
     User::factory()->create([

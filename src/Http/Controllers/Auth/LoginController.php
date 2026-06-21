@@ -40,7 +40,7 @@ class LoginController extends Controller
 
         $user = Auth::user();
 
-        if ($user->device && $user->device->uuid !== $request->header('X-Device-Uuid')) {
+        if ($user->device?->uuid !== $request->header('X-Device-Uuid')) {
             Auth::logout();
 
             // The password matched, but this device never will: no amount of
