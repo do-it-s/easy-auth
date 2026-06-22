@@ -18,10 +18,22 @@ use Laravel\Passkeys\Passkeys;
 class EasyAuthServiceProvider extends ServiceProvider
 {
     /**
+     * Register any application services.
+     */
+    public function register(): void
+    {
+        $this->mergeConfigFrom(__DIR__.'/../config/easy-auth.php', 'easy-auth');
+    }
+
+    /**
      * Bootstrap any package services.
      */
     public function boot(): void
     {
+        $this->publishes([
+            __DIR__.'/../config/easy-auth.php' => config_path('easy-auth.php'),
+        ], 'easy-auth-config');
+
         $this->loadMigrationsFrom(__DIR__.'/../database/migrations');
         $this->loadViewsFrom(__DIR__.'/../resources/views', 'easy-auth');
         $this->loadTranslationsFrom(__DIR__.'/../lang', 'easy-auth');

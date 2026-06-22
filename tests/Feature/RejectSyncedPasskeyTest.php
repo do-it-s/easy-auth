@@ -39,14 +39,24 @@ function registrationCredentialWithFlags(int $flags): PublicKeyCredential
     );
 }
 
-test('rejects a passkey the authenticator reports as backup eligible', function () {
+test('allows a backup-eligible passkey by default', function () {
+    $credential = registrationCredentialWithFlags(AuthenticatorData::FLAG_UP | AuthenticatorData::FLAG_BE);
+
+    app(RejectSyncedPasskey::class)($credential);
+})->throwsNoExceptions();
+
+test('rejects a passkey the authenticator reports as backup eligible once enabled', function () {
+    config(['easy-auth.reject_backup_eligible_passkeys' => true]);
+
     $credential = registrationCredentialWithFlags(AuthenticatorData::FLAG_UP | AuthenticatorData::FLAG_BE);
 
     expect(fn () => app(RejectSyncedPasskey::class)($credential))
         ->toThrow(ValidationException::class);
 });
 
-test('allows a passkey the authenticator reports as device-bound', function () {
+test('allows a passkey the authenticator reports as device-bound once enabled', function () {
+    config(['easy-auth.reject_backup_eligible_passkeys' => true]);
+
     $credential = registrationCredentialWithFlags(AuthenticatorData::FLAG_UP);
 
     app(RejectSyncedPasskey::class)($credential);

@@ -14,14 +14,18 @@ class RejectSyncedPasskey
      * credential manager such as iCloud Keychain or Google Password
      * Manager. This package pairs passkeys with a device UUID to assert
      * "this specific device", a guarantee a synced passkey silently
-     * defeats by working from any device it propagated to. This is a
-     * fixed policy for now; making it configurable per host app is a
-     * known future enhancement.
+     * defeats by working from any device it propagated to. Gated behind
+     * config('easy-auth.reject_backup_eligible_passkeys'), defaulting to
+     * off: see that config file for why.
      *
      * @throws InvalidPasskeyException
      */
     public function __invoke(PublicKeyCredential $credential): void
     {
+        if (! config('easy-auth.reject_backup_eligible_passkeys')) {
+            return;
+        }
+
         $response = $credential->response;
 
         if ($response instanceof AuthenticatorAttestationResponse
