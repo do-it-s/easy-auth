@@ -137,5 +137,9 @@ Windowsで`file:`依存がsymlink権限エラーになる場合は`.npmrc`に`in
 ## 既知の制限・将来の検討事項
 
 - エラー表示(`#passkey-status`, `#login-status`への直接`textContent`書き込み)は現状ハードコードされており、アプリ側でトースト通知等の独自UIに差し替えることはできない。将来`initEasyAuth({ onMessage })`のようなコールバックオプションを追加して分離する余地がある(後方互換を崩さずに追加可能)。
+- パッケージ提供のビュー(`tenants/create.blade.php`等)に`@stack`/`@yield`等の差し込みポイントが無く、`vendor:publish`の対象にもなっていない。`TenantController::store`/`update`等の`validate()`が受け付けるフィールドや`Tenant`モデルの`fillable`もハードコードされており、アプリ側がテナント作成フォーム等に独自項目を追加する手段が無い。
+- テナント作成・ユーザー登録・招待redeem・脱退・アカウント削除など、主要な操作の前後にLaravel Eventが一つも発火しない。アプリ側で監査ログや外部サービス連携等のフックを挿入する手段が無い。
+- `config/easy-auth.php`が存在せず、設定値の`publish`/`mergeConfigFrom`も無いため、挙動を設定で変更する余地が無い。
+- `EnsureProfileIsComplete`ミドルウェアは`$user->name === ''`のみでプロフィール完了を判定する。アプリが独自の必須プロフィール項目(電話番号等)を追加しても、このミドルウェアは関知せず素通りしてしまう。
 - パスキー登録時のWebAuthnオプション(`userVerification`・`residentKey`)は`laravel/passkeys`のデフォルト値(いずれも`required`)に委ねており、easy-auth側で上書きする設定項目は無い。
 - 登録時にAuthenticatorのBE(Backup Eligible)フラグを確認し、クラウド同期可能なパスキー(iCloudキーチェーン等で複数デバイスに同期されるもの)の登録は拒否する(`DoITs\EasyAuth\Actions\RejectSyncedPasskey`)。デバイスUUID束縛が前提とする「特定の1台に紐づく」という保証を、同期パスキーは満たさないため。現時点では全ホストアプリ共通の固定ルールであり、サービス単位で許可/不許可を切り替えられる設定項目はまだ無い。
