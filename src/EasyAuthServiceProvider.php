@@ -58,6 +58,17 @@ class EasyAuthServiceProvider extends ServiceProvider
         });
 
         Passkeys::authorizeLoginUsing(function (Request $request, EasyAuthUser $user): bool {
+            // laravel/passkeys' own PasskeyLoginController reads "remember"
+            // straight off the request after this hook runs, but this
+            // package's JS client never sends that field. This hook is the
+            // only point the package can reach before that read happens, so
+            // it doubles as the place to apply config('easy-auth.remember_me')
+            // as a default — only when the field is absent, so a caller that
+            // explicitly sent remember=false is still respected.
+            if (! $request->has('remember') && config('easy-auth.remember_me')) {
+                $request->merge(['remember' => true]);
+            }
+
             return $user->device?->uuid === $request->header('X-Device-Uuid');
         });
 

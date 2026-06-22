@@ -3,6 +3,18 @@
 use DoITs\EasyAuth\Models\Invitation;
 use DoITs\EasyAuth\Models\Tenant;
 use DoITs\EasyAuth\Tests\Fixtures\User;
+use Illuminate\Support\Facades\Auth;
+
+test('a user is remembered past the browser session immediately upon registering, by default', function () {
+    $response = $this->postJson('/profile-password', [
+        'name' => 'Taro',
+        'email' => 'taro@example.com',
+        'password' => 'password',
+        'password_confirmation' => 'password',
+    ]);
+
+    $response->assertOk()->assertCookie(Auth::guard('web')->getRecallerName());
+});
 
 test('a user can register with an email and password and is logged in', function () {
     $response = $this->postJson('/profile-password', [

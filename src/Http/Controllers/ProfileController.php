@@ -67,7 +67,7 @@ class ProfileController extends Controller
 
         $device = $user->device()->create(['uuid' => (string) Str::uuid()]);
 
-        Auth::login($user);
+        Auth::login($user, config('easy-auth.remember_me'));
 
         $invitation = $redeemPendingInvitation($request, $user);
 

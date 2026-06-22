@@ -32,7 +32,7 @@ class SignInController extends Controller
             'password' => ['required', 'string'],
         ], trans('easy-auth::validation'));
 
-        if (! Auth::attempt($credentials)) {
+        if (! Auth::attempt($credentials, config('easy-auth.remember_me'))) {
             throw ValidationException::withMessages([
                 'email' => __('easy-auth::auth.sign_in_failed'),
             ]);

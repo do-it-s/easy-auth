@@ -2,6 +2,7 @@
 
 use DoITs\EasyAuth\Notifications\AccountDeletionLinkNotification;
 use DoITs\EasyAuth\Tests\Fixtures\User;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Str;
 
@@ -18,6 +19,36 @@ test('a user can sign in with the correct email and password', function () {
 
     $response->assertRedirect(route('home'));
     $this->assertAuthenticatedAs($user);
+});
+
+test('a user is remembered past the browser session when signing in, by default', function () {
+    User::factory()->create([
+        'email' => 'taro@example.com',
+        'password' => 'password',
+    ]);
+
+    $response = $this->post('/login', [
+        'email' => 'taro@example.com',
+        'password' => 'password',
+    ]);
+
+    $response->assertCookie(Auth::guard('web')->getRecallerName());
+});
+
+test('a user is not remembered past the browser session once the config option is disabled', function () {
+    config(['easy-auth.remember_me' => false]);
+
+    User::factory()->create([
+        'email' => 'taro@example.com',
+        'password' => 'password',
+    ]);
+
+    $response = $this->post('/login', [
+        'email' => 'taro@example.com',
+        'password' => 'password',
+    ]);
+
+    $response->assertCookieMissing(Auth::guard('web')->getRecallerName());
 });
 
 test('a user is redirected to the page they originally intended after signing in', function () {
