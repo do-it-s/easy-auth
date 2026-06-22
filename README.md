@@ -68,8 +68,7 @@ class User extends Authenticatable implements EasyAuthUser
 | `@yield('content')` | 各ビューの`@section('content')`の差し込み先 |
 | `@stack('scripts')` | `device/reset.blade.php`等が`@push('scripts')`する |
 | `<meta name="csrf-token" content="{{ csrf_token() }}">` | JS側のfetchが`X-CSRF-TOKEN`に使う |
-| `<meta name="auth" content="{{ auth()->check() ? '1' : '0' }}">` | トップページでの自動ログイン試行の判定に使う |
-| `<p id="passkey-status"></p>` (任意のタグでよい) | 登録/自動ログイン失敗時のエラー文言の表示先。複数ページ(トップページ含む)から共有して書き込まれる |
+| `<p id="passkey-status"></p>` (任意のタグでよい) | このパッケージが提供するビュー(`profile/create`等)での登録失敗時のエラー文言の表示先 |
 
 ヘッダーのナビゲーションやブランディング、Alpine.js等のUIフレームワーク選択は上記以外、完全にアプリの自由。`$user->currentTenant()`, `$user->tenants`, `$tenant->isAdministeredBy()`, `$tenant->hasUsableBackupCode()`等のヘルパーを使ってヘッダーにテナント切替UIを組み込む場合、`@can('create', [\DoITs\EasyAuth\Models\Invitation::class, $tenant])`のようにこのパッケージのモデル名前空間を参照すること。
 
@@ -117,6 +116,36 @@ npm install
 (Alpine.js等、アプリ自身のJS初期化はこの前後で好きに行ってよい。easy-auth-jsはAlpineに依存していない。)
 
 Windowsで`file:`依存がsymlink権限エラーになる場合は`.npmrc`に`install-links=true`を追加してコピーインストールに切り替えること。
+
+#### ログイン機能(`canAttemptLogin` / `attemptLogin`)
+
+WebAuthnの儀式はユーザの明確な操作を起点に試行すべきという原則から、このパッケージはページ到達時の自動ログイン試行を行わない。代わりに、ホストアプリ自身のguest home(トップページ等)に「ログイン」UIを置けるよう、2つの関数を提供する。UIの表示/非表示の決定・試行結果を受けた後の画面遷移は、すべてアプリ側の責務になる。
+
+```js
+import { canAttemptLogin, attemptLogin } from '@do-it-s/easy-auth-js';
+
+if (canAttemptLogin()) {
+    // 「ログイン」ボタンなど、明示的な操作を要するUIを表示する。
+}
+
+loginButton.addEventListener('click', async () => {
+    const { outcome, redirect } = await attemptLogin();
+
+    if (outcome === 'success') {
+        window.location.href = redirect;
+    } else if (outcome === 'fallback') {
+        // このデバイスはパスワード認証ユーザー。パッケージの/loginへ案内する。
+        window.location.href = '/login';
+    } else {
+        // outcome === 'failure'。キャンセル・該当パスキー無し・サーバ拒否のいずれかだが、
+        // アプリ側でこれ以上の種類分けはできない/する必要がない。
+    }
+});
+```
+
+- `canAttemptLogin()`は`device_uuid`の有無だけを見た**目安**であり、ログインが必ず成功する保証ではない(WebAuthnの仕様上、儀式を行わずに「該当する認証情報があるか」を確実に知る方法は無い)。
+- `attemptLogin()`はクリックなど明確な操作からのみ呼ぶこと。DOM書き込み・画面遷移は一切行わないため、`outcome`に応じた表示・遷移は呼び出し側で用意する。
+- 旧バージョンはトップページ到達時に自動でログインを試行していたが、本バージョンではこの自動試行を廃止した。アプリ側で上記のような明示的なUIを用意しないと、登録済みデバイスでもログインできなくなる(後方互換を破る変更)。
 
 ### 8. 例外ハンドラがJSONを返せることを確認
 

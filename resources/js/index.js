@@ -1,6 +1,64 @@
 import { Passkeys } from '@laravel/passkeys';
 
 /**
+ * Tells the host app whether a returning-user login affordance is worth
+ * showing on its own guest home view. A `device_uuid` is the only local
+ * signal available (WebAuthn has no privacy-safe way to ask "does this
+ * browser have a credential for this site" without an actual ceremony),
+ * so this is a heuristic, not a guarantee that attemptLogin() will succeed.
+ */
+export function canAttemptLogin() {
+    const deviceUuid = localStorage.getItem('device_uuid');
+
+    if (!deviceUuid) {
+        return false;
+    }
+
+    return localStorage.getItem('auth_method') === 'password' || Passkeys.isSupported();
+}
+
+/**
+ * Attempts to log in this device's previously-registered user. Must only
+ * be called in direct response to an explicit user action (e.g. a click) —
+ * WebAuthn ceremonies should never be triggered automatically. Performs no
+ * DOM writes and no navigation; the caller decides what to show/do next.
+ *
+ * Resolves with one of three outcomes (never rejects except for genuinely
+ * unexpected errors, which callers are not expected to special-case):
+ * - { outcome: 'success', redirect }: session is already established.
+ * - { outcome: 'failure' }: the ceremony didn't succeed (cancelled, no
+ *   matching credential, unsupported browser, or server-side rejection).
+ * - { outcome: 'fallback' }: this device is a password-fallback user, so
+ *   no ceremony was attempted; the caller should route to the password
+ *   login page instead.
+ */
+export async function attemptLogin() {
+    if (localStorage.getItem('auth_method') === 'password') {
+        return { outcome: 'fallback' };
+    }
+
+    if (!Passkeys.isSupported()) {
+        return { outcome: 'failure' };
+    }
+
+    Passkeys.configure({
+        fetch: {
+            headers: {
+                'X-Device-Uuid': localStorage.getItem('device_uuid') ?? '',
+            },
+        },
+    });
+
+    try {
+        const result = await Passkeys.verify();
+
+        return { outcome: 'success', redirect: result.redirect ?? '/' };
+    } catch (error) {
+        return { outcome: 'failure' };
+    }
+}
+
+/**
  * Wires up the passkey registration/login and password-fallback forms
  * rendered by this package's own Blade views. The host application's
  * own JS entrypoint should import and call this once after Alpine (or
@@ -18,7 +76,6 @@ export function initEasyAuth() {
     const registerNameInput = document.getElementById('register-name');
     const status = document.getElementById('passkey-status');
     const loginStatus = document.getElementById('login-status');
-    const isAuthenticated = document.querySelector('meta[name="auth"]')?.getAttribute('content') === '1';
 
     function showPasswordRegisterForm() {
         profileCreateForm?.classList.add('hidden');
@@ -31,43 +88,6 @@ export function initEasyAuth() {
 
         if (status) {
             status.textContent = '';
-        }
-    }
-
-    async function loginWithPasskey({ silent = false, fallbackToDeviceReset = false } = {}) {
-        try {
-            Passkeys.configure({
-                fetch: {
-                    headers: {
-                        'X-Device-Uuid': localStorage.getItem('device_uuid') ?? '',
-                    },
-                },
-            });
-
-            const result = await Passkeys.verify();
-
-            window.location.href = result.redirect ?? '/';
-        } catch (error) {
-            if (fallbackToDeviceReset) {
-                window.location.href = '/device/reset';
-
-                return;
-            }
-
-            if (status && !silent) {
-                status.textContent = `ログインに失敗しました: ${error.message}`;
-            }
-        }
-    }
-
-    // 未ログインかつこのデバイスに登録済みの場合は、トップページへのアクセス時に限り自動でログインを試行する。
-    // passkey認証が失敗した場合、この端末はフォールバックユーザーではない(=パスワードを持たない)
-    // 可能性が高いため、/loginではなくdevice/resetへ直接送る。
-    if (!isAuthenticated && window.location.pathname === '/' && localStorage.getItem('device_uuid')) {
-        if (localStorage.getItem('auth_method') === 'password') {
-            window.location.href = '/login';
-        } else if (Passkeys.isSupported()) {
-            loginWithPasskey({ silent: true, fallbackToDeviceReset: true });
         }
     }
 
