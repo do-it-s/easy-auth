@@ -24,7 +24,7 @@ class PasswordResetController extends Controller
      * belongs to a fallback (password) user. Otherwise (unknown email,
      * or a passkey-only user) this does nothing — either way the same
      * generic response is returned, to avoid creating an email-existence
-     * or auth-method oracle (mirrors LoginController::store()'s identical
+     * or auth-method oracle (mirrors SignInController::store()'s identical
      * wording for wrong-password vs wrong-device).
      */
     public function store(Request $request): RedirectResponse
@@ -55,10 +55,10 @@ class PasswordResetController extends Controller
     }
 
     /**
-     * Set a new password. Deliberately does not log the user in: doing so
+     * Set a new password. Deliberately does not sign the user in: doing so
      * would authenticate the person without ever checking the device,
      * breaking this package's "(person, device) pair" invariant. The user
-     * must complete a normal LoginController::store() attempt afterward,
+     * must complete a normal SignInController::store() attempt afterward,
      * which re-runs that check uniformly.
      */
     public function update(Request $request): RedirectResponse

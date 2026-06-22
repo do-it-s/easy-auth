@@ -5,7 +5,7 @@ use DoITs\EasyAuth\Tests\Fixtures\User;
 use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Str;
 
-test('a user can log in with the correct email and password', function () {
+test('a user can sign in with the correct email and password', function () {
     $user = User::factory()->create([
         'email' => 'taro@example.com',
         'password' => 'password',
@@ -20,7 +20,7 @@ test('a user can log in with the correct email and password', function () {
     $this->assertAuthenticatedAs($user);
 });
 
-test('a user is redirected to the page they originally intended after logging in', function () {
+test('a user is redirected to the page they originally intended after signing in', function () {
     $user = User::factory()->create([
         'name' => 'Taro',
         'email' => 'taro@example.com',
@@ -38,7 +38,7 @@ test('a user is redirected to the page they originally intended after logging in
     $this->assertAuthenticatedAs($user);
 });
 
-test('login fails with an incorrect password', function () {
+test('sign-in fails with an incorrect password', function () {
     User::factory()->create([
         'email' => 'taro@example.com',
         'password' => 'password',
@@ -54,7 +54,7 @@ test('login fails with an incorrect password', function () {
     $this->assertGuest();
 });
 
-test('authenticated users are redirected away from the login page', function () {
+test('authenticated users are redirected away from the sign-in page', function () {
     $user = User::factory()->create();
 
     $response = $this->actingAs($user)->get('/login');
@@ -62,7 +62,7 @@ test('authenticated users are redirected away from the login page', function () 
     $response->assertRedirect(route('home'));
 });
 
-test('a user with a registered device can log in with the matching device UUID', function () {
+test('a user with a registered device can sign in with the matching device UUID', function () {
     $user = User::factory()->create([
         'email' => 'taro@example.com',
         'password' => 'password',
@@ -78,7 +78,7 @@ test('a user with a registered device can log in with the matching device UUID',
     $this->assertAuthenticatedAs($user);
 });
 
-test('a user with a registered device cannot log in from a different device, and is emailed an account deletion link', function () {
+test('a user with a registered device cannot sign in from a different device, and is emailed an account deletion link', function () {
     Notification::fake();
     $user = User::factory()->create([
         'email' => 'taro@example.com',
@@ -96,7 +96,7 @@ test('a user with a registered device cannot log in from a different device, and
     Notification::assertSentTo($user, AccountDeletionLinkNotification::class);
 });
 
-test('a user with no registered device cannot log in when a device UUID is sent, and is emailed an account deletion link', function () {
+test('a user with no registered device cannot sign in when a device UUID is sent, and is emailed an account deletion link', function () {
     Notification::fake();
     $user = User::factory()->create([
         'email' => 'taro@example.com',

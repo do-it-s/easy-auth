@@ -162,7 +162,7 @@ class ProfileController extends Controller
             return back()->withErrors(['name' => __('easy-auth::account_deletion.name_mismatch')]);
         }
 
-        // Logout must run before delete(): SessionGuard::logout() cycles and
+        // Signing out must run before delete(): SessionGuard::logout() cycles and
         // saves the remember token, which would re-insert the row Eloquent
         // had just marked as deleted (save() inserts once exists is false).
         Auth::guard('web')->logout();

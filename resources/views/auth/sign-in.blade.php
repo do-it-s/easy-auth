@@ -2,15 +2,15 @@
 
 @section('content')
     <div class="w-full max-w-sm">
-        <h1 class="mb-4 text-lg">{{ __('easy-auth::auth.login_heading') }}</h1>
+        <h1 class="mb-4 text-lg">{{ __('easy-auth::auth.sign_in_heading') }}</h1>
 
         @if (session('status'))
             <p class="mb-4 text-sm text-green-600">{{ session('status') }}</p>
         @endif
 
-        <p id="login-status" class="mb-4 text-sm text-red-600"></p>
+        <p id="sign-in-status" class="mb-4 text-sm text-red-600"></p>
 
-        <form id="login-form">
+        <form id="sign-in-form">
             <label for="email" class="block mb-1 text-sm">{{ __('easy-auth::auth.email') }}</label>
 
             <input
@@ -35,7 +35,7 @@
                 type="submit"
                 class="inline-block px-5 py-1.5 border border-[#19140035] dark:border-[#3E3E3A] hover:border-[#19140035] dark:hover:border-[#3E3E3A] rounded-sm text-sm leading-normal"
             >
-                {{ __('easy-auth::auth.login_button') }}
+                {{ __('easy-auth::auth.sign_in_button') }}
             </button>
         </form>
 

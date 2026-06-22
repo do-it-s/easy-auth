@@ -86,7 +86,7 @@ test('a sole tenant admin can still delete their account', function () {
     $this->assertDatabaseMissing('users', ['id' => $admin->id]);
 });
 
-test('the full flow: a device-mismatched login emails a link that deletes the account when confirmed', function () {
+test('the full flow: a device-mismatched sign-in emails a link that deletes the account when confirmed', function () {
     Notification::fake();
     $user = User::factory()->create(['name' => 'Taro', 'email' => 'taro@example.com', 'password' => 'password']);
     $user->device()->create(['uuid' => (string) Str::uuid()]);

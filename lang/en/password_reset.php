@@ -7,6 +7,6 @@ return [
     'reset_heading' => 'Set a new password',
     'reset_button' => 'Update password',
     'link_sent' => "If that email is registered for password sign-in, we've sent a reset link to it.",
-    'password_updated' => 'Your password has been updated. Please log in again.',
+    'password_updated' => 'Your password has been updated. Please sign in again.',
     'reset_failed' => 'This password reset link is invalid or has expired.',
 ];

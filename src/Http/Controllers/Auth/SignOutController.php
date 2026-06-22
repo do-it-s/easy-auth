@@ -7,10 +7,10 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
-class LogoutController extends Controller
+class SignOutController extends Controller
 {
     /**
-     * Log the current user out.
+     * Sign the current user out.
      */
     public function __invoke(Request $request): RedirectResponse
     {

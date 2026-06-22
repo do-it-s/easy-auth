@@ -12,7 +12,7 @@ class AccountDeletionController extends Controller
     /**
      * Show the confirmation page for deleting an account that is locked
      * out by an unrecognized device, reached only via the short-lived
-     * signed link LoginController::store() issues on a device mismatch.
+     * signed link SignInController::store() issues on a device mismatch.
      */
     public function show(Request $request, int $id): View|RedirectResponse
     {

@@ -12,14 +12,14 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\URL;
 use Illuminate\Validation\ValidationException;
 
-class LoginController extends Controller
+class SignInController extends Controller
 {
     /**
-     * Show the email and password login form.
+     * Show the email and password sign-in form.
      */
     public function create(): View
     {
-        return view('easy-auth::auth.login');
+        return view('easy-auth::auth.sign-in');
     }
 
     /**
@@ -34,7 +34,7 @@ class LoginController extends Controller
 
         if (! Auth::attempt($credentials)) {
             throw ValidationException::withMessages([
-                'email' => __('easy-auth::auth.login_failed'),
+                'email' => __('easy-auth::auth.sign_in_failed'),
             ]);
         }
 
@@ -49,7 +49,7 @@ class LoginController extends Controller
             // response itself — doing so synchronously would let anyone
             // probing with a guessed or leaked password confirm its
             // correctness even without the right device, the exact oracle
-            // this package's generic login_failed wording exists to avoid.
+            // this package's generic sign_in_failed wording exists to avoid.
             $user->notify(new AccountDeletionLinkNotification(
                 URL::temporarySignedRoute(
                     'account-deletion.show',
@@ -59,7 +59,7 @@ class LoginController extends Controller
             ));
 
             throw ValidationException::withMessages([
-                'email' => __('easy-auth::auth.login_failed'),
+                'email' => __('easy-auth::auth.sign_in_failed'),
             ]);
         }
 

@@ -1,13 +1,13 @@
 import { Passkeys } from '@laravel/passkeys';
 
 /**
- * Tells the host app whether a returning-user login affordance is worth
+ * Tells the host app whether a returning-user sign-in affordance is worth
  * showing on its own guest home view. A `device_uuid` is the only local
  * signal available (WebAuthn has no privacy-safe way to ask "does this
  * browser have a credential for this site" without an actual ceremony),
- * so this is a heuristic, not a guarantee that attemptLogin() will succeed.
+ * so this is a heuristic, not a guarantee that attemptSignIn() will succeed.
  */
-export function canAttemptLogin() {
+export function canAttemptSignIn() {
     const deviceUuid = localStorage.getItem('device_uuid');
 
     if (!deviceUuid) {
@@ -18,7 +18,7 @@ export function canAttemptLogin() {
 }
 
 /**
- * Attempts to log in this device's previously-registered user. Must only
+ * Attempts to sign in this device's previously-registered user. Must only
  * be called in direct response to an explicit user action (e.g. a click) —
  * WebAuthn ceremonies should never be triggered automatically. Performs no
  * DOM writes and no navigation; the caller decides what to show/do next.
@@ -30,9 +30,9 @@ export function canAttemptLogin() {
  *   matching credential, unsupported browser, or server-side rejection).
  * - { outcome: 'fallback' }: this device is a password-fallback user, so
  *   no ceremony was attempted; the caller should route to the password
- *   login page instead.
+ *   sign-in page instead.
  */
-export async function attemptLogin() {
+export async function attemptSignIn() {
     if (localStorage.getItem('auth_method') === 'password') {
         return { outcome: 'fallback' };
     }
@@ -59,7 +59,7 @@ export async function attemptLogin() {
 }
 
 /**
- * Wires up the passkey registration/login and password-fallback forms
+ * Wires up the passkey registration/sign-in and password-fallback forms
  * rendered by this package's own Blade views. The host application's
  * own JS entrypoint should import and call this once after Alpine (or
  * whatever else it bootstraps) is set up; the IDs and routes referenced
@@ -71,11 +71,11 @@ export function initEasyAuth() {
     const passwordRegisterForm = document.getElementById('password-register-form');
     const showLeaveTenantButton = document.getElementById('show-leave-tenant');
     const leaveTenantSection = document.getElementById('leave-tenant-section');
-    const loginForm = document.getElementById('login-form');
+    const signInForm = document.getElementById('sign-in-form');
     const nameInput = document.getElementById('name');
     const registerNameInput = document.getElementById('register-name');
     const status = document.getElementById('passkey-status');
-    const loginStatus = document.getElementById('login-status');
+    const signInStatus = document.getElementById('sign-in-status');
 
     function showPasswordRegisterForm() {
         profileCreateForm?.classList.add('hidden');
@@ -186,10 +186,10 @@ export function initEasyAuth() {
         }
     });
 
-    loginForm?.addEventListener('submit', async (event) => {
+    signInForm?.addEventListener('submit', async (event) => {
         event.preventDefault();
 
-        const formData = new FormData(loginForm);
+        const formData = new FormData(signInForm);
 
         try {
             const response = await fetch('/login', {
@@ -208,15 +208,15 @@ export function initEasyAuth() {
             if (!response.ok) {
                 const message = data.errors
                     ? Object.values(data.errors).flat().join(' ')
-                    : (data.message ?? 'ログインに失敗しました');
+                    : (data.message ?? 'サインインに失敗しました');
 
                 throw new Error(message);
             }
 
             window.location.href = data.redirect ?? '/';
         } catch (error) {
-            if (loginStatus) {
-                loginStatus.textContent = error.message;
+            if (signInStatus) {
+                signInStatus.textContent = error.message;
             }
         }
     });

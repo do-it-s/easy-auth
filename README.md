@@ -74,9 +74,9 @@ class User extends Authenticatable implements EasyAuthUser
 
 ### 5. `home`ルートを用意
 
-ログイン・登録・招待受け入れ・テナント切替・パスワード変更等の完了後、このパッケージは`redirect()->route('home')`で遷移する。`home`という名前のルート自体はこのパッケージは定義しないため、アプリ側で用意する必要がある。
+サインイン・登録・招待受け入れ・テナント切替・パスワード変更等の完了後、このパッケージは`redirect()->route('home')`で遷移する。`home`という名前のルート自体はこのパッケージは定義しないため、アプリ側で用意する必要がある。
 
-このホーム画面は、ログイン中のユーザーがまだどのテナントにも所属していない状態(`$user->currentTenant()`が`null`を返す)を正しく表示できる必要がある。新規登録直後で招待を受けていない場合や、所属していた唯一のテナントを脱退した直後など、テナント未所属の状態は正常系として発生し得る。このパッケージはそのようなユーザーのログイン・テナント作成・招待受け入れを問題なく許可する設計であり、そのテナント未所属ユーザーを自動的に削除・整理する仕組みは現時点では持たない(将来的な検討事項)。ホーム画面側は「テナントが無い」状態を前提に分岐を用意すること。
+このホーム画面は、サインイン中のユーザーがまだどのテナントにも所属していない状態(`$user->currentTenant()`が`null`を返す)を正しく表示できる必要がある。新規登録直後で招待を受けていない場合や、所属していた唯一のテナントを脱退した直後など、テナント未所属の状態は正常系として発生し得る。このパッケージはそのようなユーザーのサインイン・テナント作成・招待受け入れを問題なく許可する設計であり、そのテナント未所属ユーザーを自動的に削除・整理する仕組みは現時点では持たない(将来的な検討事項)。ホーム画面側は「テナントが無い」状態を前提に分岐を用意すること。
 
 ### 6. マイグレーション実行
 
@@ -86,7 +86,7 @@ php artisan migrate
 
 ### 7. フロントエンド(JS)
 
-`resources/js/`にpasskey登録/ログイン/パスワードフォールバックのJSが`@do-it-s/easy-auth-js`としてパッケージ化されている。アプリ側の`package.json`に追加:
+`resources/js/`にpasskey登録/サインイン/パスワードフォールバックのJSが`@do-it-s/easy-auth-js`としてパッケージ化されている。アプリ側の`package.json`に追加:
 
 ```json
 {
@@ -117,19 +117,19 @@ npm install
 
 Windowsで`file:`依存がsymlink権限エラーになる場合は`.npmrc`に`install-links=true`を追加してコピーインストールに切り替えること。
 
-#### ログイン機能(`canAttemptLogin` / `attemptLogin`)
+#### サインイン機能(`canAttemptSignIn` / `attemptSignIn`)
 
-WebAuthnの儀式はユーザの明確な操作を起点に試行すべきという原則から、このパッケージはページ到達時の自動ログイン試行を行わない。代わりに、ホストアプリ自身のguest home(トップページ等)に「ログイン」UIを置けるよう、2つの関数を提供する。UIの表示/非表示の決定・試行結果を受けた後の画面遷移は、すべてアプリ側の責務になる。
+WebAuthnの儀式はユーザの明確な操作を起点に試行すべきという原則から、このパッケージはページ到達時の自動サインイン試行を行わない。代わりに、ホストアプリ自身のguest home(トップページ等)に「サインイン」UIを置けるよう、2つの関数を提供する。UIの表示/非表示の決定・試行結果を受けた後の画面遷移は、すべてアプリ側の責務になる。
 
 ```js
-import { canAttemptLogin, attemptLogin } from '@do-it-s/easy-auth-js';
+import { canAttemptSignIn, attemptSignIn } from '@do-it-s/easy-auth-js';
 
-if (canAttemptLogin()) {
-    // 「ログイン」ボタンなど、明示的な操作を要するUIを表示する。
+if (canAttemptSignIn()) {
+    // 「サインイン」ボタンなど、明示的な操作を要するUIを表示する。
 }
 
-loginButton.addEventListener('click', async () => {
-    const { outcome, redirect } = await attemptLogin();
+signInButton.addEventListener('click', async () => {
+    const { outcome, redirect } = await attemptSignIn();
 
     if (outcome === 'success') {
         window.location.href = redirect;
@@ -143,9 +143,9 @@ loginButton.addEventListener('click', async () => {
 });
 ```
 
-- `canAttemptLogin()`は`device_uuid`の有無だけを見た**目安**であり、ログインが必ず成功する保証ではない(WebAuthnの仕様上、儀式を行わずに「該当する認証情報があるか」を確実に知る方法は無い)。
-- `attemptLogin()`はクリックなど明確な操作からのみ呼ぶこと。DOM書き込み・画面遷移は一切行わないため、`outcome`に応じた表示・遷移は呼び出し側で用意する。
-- 旧バージョンはトップページ到達時に自動でログインを試行していたが、本バージョンではこの自動試行を廃止した。アプリ側で上記のような明示的なUIを用意しないと、登録済みデバイスでもログインできなくなる(後方互換を破る変更)。
+- `canAttemptSignIn()`は`device_uuid`の有無だけを見た**目安**であり、サインインが必ず成功する保証ではない(WebAuthnの仕様上、儀式を行わずに「該当する認証情報があるか」を確実に知る方法は無い)。
+- `attemptSignIn()`はクリックなど明確な操作からのみ呼ぶこと。DOM書き込み・画面遷移は一切行わないため、`outcome`に応じた表示・遷移は呼び出し側で用意する。
+- 旧バージョンはトップページ到達時に自動でサインインを試行していたが、本バージョンではこの自動試行を廃止した。アプリ側で上記のような明示的なUIを用意しないと、登録済みデバイスでもサインインできなくなる(後方互換を破る変更)。
 
 ### 8. 例外ハンドラがJSONを返せることを確認
 
@@ -165,7 +165,7 @@ loginButton.addEventListener('click', async () => {
 
 ## 既知の制限・将来の検討事項
 
-- エラー表示(`#passkey-status`, `#login-status`への直接`textContent`書き込み)は現状ハードコードされており、アプリ側でトースト通知等の独自UIに差し替えることはできない。将来`initEasyAuth({ onMessage })`のようなコールバックオプションを追加して分離する余地がある(後方互換を崩さずに追加可能)。
+- エラー表示(`#passkey-status`, `#sign-in-status`への直接`textContent`書き込み)は現状ハードコードされており、アプリ側でトースト通知等の独自UIに差し替えることはできない。将来`initEasyAuth({ onMessage })`のようなコールバックオプションを追加して分離する余地がある(後方互換を崩さずに追加可能)。
 - パッケージ提供のビュー(`tenants/create.blade.php`等)に`@stack`/`@yield`等の差し込みポイントが無く、`vendor:publish`の対象にもなっていない。`TenantController::store`/`update`等の`validate()`が受け付けるフィールドや`Tenant`モデルの`fillable`もハードコードされており、アプリ側がテナント作成フォーム等に独自項目を追加する手段が無い。
 - テナント作成・ユーザー登録・招待redeem・脱退・アカウント削除など、主要な操作の前後にLaravel Eventが一つも発火しない。アプリ側で監査ログや外部サービス連携等のフックを挿入する手段が無い。
 - `EnsureProfileIsComplete`ミドルウェアは`$user->name === ''`のみでプロフィール完了を判定する。アプリが独自の必須プロフィール項目(電話番号等)を追加しても、このミドルウェアは関知せず素通りしてしまう。
