@@ -4,6 +4,7 @@ Thumbs.db
 
 # Editor / IDE
 .phpactor.json
+/.claude
 /.codex
 /.cursor/
 /.idea
