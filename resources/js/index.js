@@ -54,6 +54,11 @@ export async function attemptSignIn() {
 
         return { outcome: 'success', redirect: result.redirect ?? '/' };
     } catch (error) {
+        // Logged rather than swallowed: 'failure' also covers unexpected
+        // errors (network, server rejection), which are otherwise
+        // undebuggable since the caller only sees the outcome string.
+        console.error(error);
+
         return { outcome: 'failure' };
     }
 }
