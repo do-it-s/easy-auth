@@ -7,6 +7,7 @@ use DoITs\EasyAuth\Tests\Fixtures\User;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Foundation\Application;
 use Illuminate\Support\Facades\Schema;
+use Laravel\Passkeys\Passkeys;
 use Orchestra\Testbench\TestCase as BaseTestCase;
 
 abstract class TestCase extends BaseTestCase
@@ -39,6 +40,11 @@ abstract class TestCase extends BaseTestCase
         ]);
 
         $app['config']->set('auth.providers.users.model', User::class);
+
+        // laravel/passkeys keeps its own user model reference (defaulting to
+        // 'App\Models\User') separate from auth.providers.users.model; a host
+        // app is expected to set this itself in its own AppServiceProvider.
+        Passkeys::useUserModel(User::class);
 
         $app['config']->set('app.key', 'base64:'.base64_encode(str_repeat('a', 32)));
 
@@ -83,5 +89,11 @@ abstract class TestCase extends BaseTestCase
         // Includes this package's own migration that relaxes email/password
         // to nullable, exercising it the same way a host application would.
         $this->loadMigrationsFrom(__DIR__.'/../database/migrations');
+
+        // laravel/passkeys only publishes its migration for a host app to
+        // copy into its own database/migrations (see PasskeysServiceProvider
+        // ::registerPublishing()); it isn't auto-loaded. Load it directly so
+        // tests can exercise real Passkey records.
+        $this->loadMigrationsFrom(Passkeys::migrationPath());
     }
 }

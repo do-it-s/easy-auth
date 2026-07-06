@@ -34,7 +34,14 @@ class ProfileController extends Controller
     {
         $userModel = config('auth.providers.users.model');
 
-        $options = $generate(new $userModel(['name' => '']));
+        // The account doesn't exist yet, so name/email/id are all still
+        // unknown to PasskeyAuthenticatable. Without the name the profile
+        // creation form already collected, WebAuthn's user.name/displayName
+        // would be empty, which has been observed to make Windows Hello
+        // silently fail to find the credential again at sign-in.
+        $name = Str::limit((string) $request->query('name', ''), 255, '');
+
+        $options = $generate(new $userModel(['name' => $name]));
 
         $request->session()->put('passkey.registration_options', WebAuthn::toJson($options));
 

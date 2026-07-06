@@ -111,13 +111,25 @@ export function initEasyAuth() {
     profileCreateForm?.addEventListener('submit', async (event) => {
         event.preventDefault();
 
-        const name = new FormData(profileCreateForm).get('name');
+        const name = (new FormData(profileCreateForm).get('name') ?? '').trim();
+
+        // HTML's `required` only rejects a truly empty value, so
+        // whitespace-only input would otherwise reach passkeyOptions() and
+        // silently become a placeholder WebAuthn display name instead of
+        // the name the user meant to register.
+        if (!name) {
+            if (status) {
+                status.textContent = '名前を入力してください';
+            }
+
+            return;
+        }
 
         try {
             const result = await Passkeys.register({
                 name: 'このデバイス',
                 routes: {
-                    options: '/profile/passkey-options',
+                    options: `/profile/passkey-options?name=${encodeURIComponent(name)}`,
                     submit: '/profile',
                 },
             });
