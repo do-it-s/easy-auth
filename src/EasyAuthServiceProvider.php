@@ -2,6 +2,7 @@
 
 namespace DoITs\EasyAuth;
 
+use DoITs\EasyAuth\Actions\GenerateRegistrationOptions;
 use DoITs\EasyAuth\Contracts\EasyAuthUser;
 use DoITs\EasyAuth\Http\Middleware\EnsureProfileIsComplete;
 use DoITs\EasyAuth\Models\Invitation;
@@ -13,6 +14,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\ServiceProvider;
+use Laravel\Passkeys\Actions\GenerateRegistrationOptions as BaseGenerateRegistrationOptions;
 use Laravel\Passkeys\Passkeys;
 
 class EasyAuthServiceProvider extends ServiceProvider
@@ -23,6 +25,11 @@ class EasyAuthServiceProvider extends ServiceProvider
     public function register(): void
     {
         $this->mergeConfigFrom(__DIR__.'/../config/easy-auth.php', 'easy-auth');
+
+        // Overrides the vendor action's authenticatorSelection() to honor
+        // config('easy-auth.force_platform_authenticator'). See that class's
+        // docblock for why this is opt-in.
+        $this->app->bind(BaseGenerateRegistrationOptions::class, GenerateRegistrationOptions::class);
     }
 
     /**

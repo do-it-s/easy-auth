@@ -43,3 +43,21 @@ test('passkey registration options fall back to a placeholder when the name is o
     expect($user['name'])->toBe($placeholder);
     expect($user['displayName'])->toBe($placeholder);
 });
+
+test('passkey registration options do not restrict authenticatorAttachment by default', function () {
+    $response = $this->getJson('/profile/passkey-options');
+
+    $response->assertOk();
+
+    expect($response->json('options.authenticatorSelection'))->not->toHaveKey('authenticatorAttachment');
+});
+
+test('passkey registration options force the platform authenticatorAttachment when configured', function () {
+    config(['easy-auth.force_platform_authenticator' => true]);
+
+    $response = $this->getJson('/profile/passkey-options');
+
+    $response->assertOk();
+
+    expect($response->json('options.authenticatorSelection.authenticatorAttachment'))->toBe('platform');
+});
