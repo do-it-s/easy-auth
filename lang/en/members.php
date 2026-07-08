@@ -9,7 +9,7 @@ return [
     'demote' => 'Demote',
     'promote' => 'Promote',
     'remove' => 'Remove',
-    'remove_confirm' => 'Remove this member from the tenant?',
+    'remove_confirm' => 'Remove this member from the organization?',
     'no_admins' => 'No administrators.',
     'no_members' => 'No members.',
     'last_admin_cannot_be_demoted' => 'The last administrator cannot be demoted.',

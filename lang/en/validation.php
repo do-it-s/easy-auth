@@ -5,9 +5,9 @@ return [
     'name.string' => 'The name field must be a string.',
     'name.max' => 'The name field must not be greater than 255 characters.',
 
-    'tenant_name.required' => 'The tenant name field is required.',
-    'tenant_name.string' => 'The tenant name field must be a string.',
-    'tenant_name.max' => 'The tenant name field must not be greater than 255 characters.',
+    'tenant_name.required' => 'The organization name field is required.',
+    'tenant_name.string' => 'The organization name field must be a string.',
+    'tenant_name.max' => 'The organization name field must not be greater than 255 characters.',
 
     'email.required' => 'The email field is required.',
     'email.string' => 'The email field must be a string.',

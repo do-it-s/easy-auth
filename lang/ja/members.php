@@ -9,7 +9,7 @@ return [
     'demote' => '降格',
     'promote' => '昇格',
     'remove' => '脱退',
-    'remove_confirm' => 'このメンバーをテナントから脱退させますか?',
+    'remove_confirm' => 'このメンバーを組織から脱退させますか?',
     'no_admins' => '管理者はいません。',
     'no_members' => 'メンバーはいません。',
     'last_admin_cannot_be_demoted' => '最後の管理者は降格できません。',

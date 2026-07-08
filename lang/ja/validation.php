@@ -5,9 +5,9 @@ return [
     'name.string' => 'お名前の形式が正しくありません。',
     'name.max' => 'お名前は255文字以内で入力してください。',
 
-    'tenant_name.required' => 'テナント名を入力してください。',
-    'tenant_name.string' => 'テナント名の形式が正しくありません。',
-    'tenant_name.max' => 'テナント名は255文字以内で入力してください。',
+    'tenant_name.required' => '組織名を入力してください。',
+    'tenant_name.string' => '組織名の形式が正しくありません。',
+    'tenant_name.max' => '組織名は255文字以内で入力してください。',
 
     'email.required' => 'メールアドレスを入力してください。',
     'email.string' => 'メールアドレスの形式が正しくありません。',

@@ -15,7 +15,7 @@ return [
     'edit_heading' => 'プロフィールを入力',
     'save' => '保存',
     'delete_heading' => 'アカウントを削除',
-    'delete_description' => 'アカウントを完全に削除し、所属しているすべてのテナントから外れます。元に戻すことはできません。',
+    'delete_description' => 'アカウントを完全に削除し、所属しているすべての組織から外れます。元に戻すことはできません。',
     'name_required' => '名前を入力してください',
     'passkey_label' => 'このデバイス',
     'passkey_register_failed' => 'このデバイスでパスキーを作成できませんでした',
