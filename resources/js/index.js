@@ -64,13 +64,204 @@ export async function attemptSignIn() {
 }
 
 /**
- * Wires up the passkey registration/sign-in and password-fallback forms
- * rendered by this package's own Blade views. The host application's
- * own JS entrypoint should import and call this once after Alpine (or
- * whatever else it bootstraps) is set up; the IDs and routes referenced
- * here are owned by this package, not by the host app.
+ * Returns this device's locally-stored sign-in identifiers. Read-only,
+ * performs no DOM access; callers decide how/where to display them.
  */
-export function initEasyAuth() {
+export function getDeviceCredentials() {
+    return {
+        device_uuid: localStorage.getItem('device_uuid'),
+        auth_method: localStorage.getItem('auth_method'),
+    };
+}
+
+/**
+ * Clears this device's locally-stored sign-in identifiers (e.g. after the
+ * account they pointed to was deleted, or on user request).
+ */
+export function clearDeviceCredentials() {
+    localStorage.removeItem('device_uuid');
+    localStorage.removeItem('auth_method');
+}
+
+function csrfToken() {
+    return document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') ?? '';
+}
+
+/**
+ * Posts JSON to the given URL and classifies the outcome without ever
+ * throwing: primitives built on this can return a plain { outcome, code }
+ * shape instead of forcing every caller to catch exceptions. A response
+ * body containing `errors` is assumed to already be a Laravel validation
+ * response (field messages are pre-translated server-side); anything else
+ * that isn't `response.ok` is a `server_error`, and a request that never
+ * reached/parsed a response is a `network_error`.
+ */
+async function postJson(url, body, { method = 'POST', headers = {} } = {}) {
+    let response;
+
+    try {
+        response = await fetch(url, {
+            method,
+            headers: {
+                'Content-Type': 'application/json',
+                Accept: 'application/json',
+                'X-CSRF-TOKEN': csrfToken(),
+                ...headers,
+            },
+            body: JSON.stringify(body),
+        });
+    } catch (error) {
+        console.error(error);
+
+        return { ok: false, code: 'network_error' };
+    }
+
+    let data;
+
+    try {
+        data = await response.json();
+    } catch (error) {
+        console.error(error);
+
+        return { ok: false, code: 'network_error' };
+    }
+
+    if (!response.ok) {
+        return {
+            ok: false,
+            code: data.errors ? 'validation' : 'server_error',
+            errors: data.errors,
+        };
+    }
+
+    return { ok: true, data };
+}
+
+/**
+ * Registers a passkey for a not-yet-created user and saves their display
+ * name. No DOM reads/writes; callers decide what to show/do with the
+ * outcome. `passkeyLabel` is the passkey's own nickname (what
+ * @laravel/passkeys stores for this credential, e.g. "MacBook Pro"), not
+ * the user's display name — kept separate so callers can supply their own
+ * translated default without this module hardcoding one.
+ */
+export async function registerPasskey({ name, passkeyLabel }) {
+    const trimmedName = (name ?? '').trim();
+
+    // HTML's `required` only rejects a truly empty value, so whitespace-only
+    // input would otherwise reach passkeyOptions() and silently become a
+    // placeholder WebAuthn display name instead of the name the user meant
+    // to register.
+    if (!trimmedName) {
+        return { outcome: 'failure', code: 'name_required' };
+    }
+
+    let registration;
+
+    try {
+        registration = await Passkeys.register({
+            name: passkeyLabel,
+            routes: {
+                options: `/profile/passkey-options?name=${encodeURIComponent(trimmedName)}`,
+                submit: '/profile',
+            },
+        });
+    } catch (error) {
+        console.error(error);
+
+        return { outcome: 'failure', code: 'ceremony_failed' };
+    }
+
+    if (registration.device_uuid) {
+        localStorage.setItem('device_uuid', registration.device_uuid);
+    }
+
+    const result = await postJson('/profile', { name: trimmedName }, { method: 'PATCH' });
+
+    if (!result.ok) {
+        return { outcome: 'failure', code: result.code, errors: result.errors };
+    }
+
+    return { outcome: 'success', redirect: result.data.redirect ?? '/' };
+}
+
+/**
+ * Registers a new user with an email and password, for devices where
+ * passkeys are not available.
+ */
+export async function registerWithPassword({ name, email, password, password_confirmation }) {
+    const result = await postJson('/profile-password', { name, email, password, password_confirmation });
+
+    if (!result.ok) {
+        return { outcome: 'failure', code: result.code, errors: result.errors };
+    }
+
+    if (result.data.device_uuid) {
+        localStorage.setItem('device_uuid', result.data.device_uuid);
+        localStorage.setItem('auth_method', 'password');
+    }
+
+    return { outcome: 'success', redirect: result.data.redirect ?? '/' };
+}
+
+/**
+ * Signs in using an email and password (this device's password-fallback
+ * counterpart to attemptSignIn()).
+ */
+export async function signInWithPassword({ email, password }) {
+    const result = await postJson(
+        '/login',
+        { email, password },
+        { headers: { 'X-Device-Uuid': localStorage.getItem('device_uuid') ?? '' } },
+    );
+
+    if (!result.ok) {
+        return { outcome: 'failure', code: result.code, errors: result.errors };
+    }
+
+    return { outcome: 'success', redirect: result.data.redirect ?? '/' };
+}
+
+function readStrings() {
+    const el = document.getElementById('easy-auth-strings');
+
+    if (!el) {
+        return {};
+    }
+
+    try {
+        return JSON.parse(el.textContent);
+    } catch (error) {
+        console.error(error);
+
+        return {};
+    }
+}
+
+function joinErrors(errors) {
+    return Object.values(errors ?? {}).flat().join(' ');
+}
+
+/**
+ * Wires up the passkey registration/sign-in and password-fallback forms
+ * rendered by this package's own Blade views, plus the device-reset and
+ * account-deletion pages' localStorage housekeeping. The host application's
+ * own JS entrypoint should import and call this once after Alpine (or
+ * whatever else it bootstraps) is set up; every element ID referenced here
+ * is owned by this package's own views, not by the host app, and is looked
+ * up defensively since any given page renders only some of them.
+ *
+ * By default, failures are written into this package's own status elements
+ * (`#passkey-status`, `#sign-in-status`). Pass `onStatus({ outcome, code,
+ * message })` to take over that display yourself (e.g. a toast) instead —
+ * the form wiring and WebAuthn ceremony calls stay handled by this
+ * function either way. Apps that don't want even the wiring/element IDs
+ * should call the exported primitives (registerPasskey, attemptSignIn,
+ * etc.) directly instead of calling initEasyAuth() at all.
+ */
+export function initEasyAuth({ onStatus } = {}) {
+    const strings = readStrings();
+
     const profileCreateForm = document.getElementById('profile-create-form');
     const showPasswordRegisterButton = document.getElementById('show-password-register');
     const passwordRegisterForm = document.getElementById('password-register-form');
@@ -79,8 +270,24 @@ export function initEasyAuth() {
     const signInForm = document.getElementById('sign-in-form');
     const nameInput = document.getElementById('name');
     const registerNameInput = document.getElementById('register-name');
-    const status = document.getElementById('passkey-status');
+    const passkeyStatus = document.getElementById('passkey-status');
     const signInStatus = document.getElementById('sign-in-status');
+    const deviceUuidEl = document.getElementById('device-uuid');
+    const authMethodEl = document.getElementById('auth-method');
+    const deviceResetStatus = document.getElementById('status');
+    const clearDeviceButton = document.getElementById('clear');
+
+    function report(el, outcome, code, message) {
+        if (onStatus) {
+            onStatus({ outcome, code, message });
+
+            return;
+        }
+
+        if (el) {
+            el.textContent = message ?? '';
+        }
+    }
 
     function showPasswordRegisterForm() {
         profileCreateForm?.classList.add('hidden');
@@ -91,12 +298,12 @@ export function initEasyAuth() {
             registerNameInput.value = nameInput.value;
         }
 
-        if (status) {
-            status.textContent = '';
+        if (passkeyStatus) {
+            passkeyStatus.textContent = '';
         }
     }
 
-    // パスキーに対応していないブラウザでは、最初からメール+パスワードでの登録フォームを表示する。
+    // Browsers without passkey support go straight to the password form.
     if (profileCreateForm && !Passkeys.isSupported()) {
         showPasswordRegisterForm();
     }
@@ -111,130 +318,91 @@ export function initEasyAuth() {
     profileCreateForm?.addEventListener('submit', async (event) => {
         event.preventDefault();
 
-        const name = (new FormData(profileCreateForm).get('name') ?? '').trim();
+        const name = new FormData(profileCreateForm).get('name');
+        const result = await registerPasskey({ name, passkeyLabel: strings.passkeyLabel });
 
-        // HTML's `required` only rejects a truly empty value, so
-        // whitespace-only input would otherwise reach passkeyOptions() and
-        // silently become a placeholder WebAuthn display name instead of
-        // the name the user meant to register.
-        if (!name) {
-            if (status) {
-                status.textContent = '名前を入力してください';
-            }
+        if (result.outcome === 'success') {
+            report(passkeyStatus, 'success', undefined, undefined);
+            window.location.href = result.redirect;
 
             return;
         }
 
-        try {
-            const result = await Passkeys.register({
-                name: 'このデバイス',
-                routes: {
-                    options: `/profile/passkey-options?name=${encodeURIComponent(name)}`,
-                    submit: '/profile',
-                },
-            });
+        const messages = {
+            name_required: strings.nameRequired,
+            ceremony_failed: strings.passkeyRegistrationFailed,
+            validation: joinErrors(result.errors),
+            server_error: strings.profileSaveFailed,
+            network_error: strings.networkError,
+        };
 
-            if (result.device_uuid) {
-                localStorage.setItem('device_uuid', result.device_uuid);
-            }
-
-            const response = await fetch('/profile', {
-                method: 'PATCH',
-                headers: {
-                    'Content-Type': 'application/json',
-                    Accept: 'application/json',
-                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') ?? '',
-                },
-                body: JSON.stringify({ name }),
-            });
-
-            const data = await response.json();
-
-            if (!response.ok) {
-                throw new Error(data.message ?? 'プロフィールの保存に失敗しました');
-            }
-
-            window.location.href = data.redirect ?? '/';
-        } catch (error) {
-            if (status) {
-                status.textContent = `登録に失敗しました: ${error.message}`;
-            }
-
-            showPasswordRegisterButton?.classList.remove('hidden');
-        }
+        report(passkeyStatus, 'failure', result.code, messages[result.code]);
+        showPasswordRegisterButton?.classList.remove('hidden');
     });
 
     passwordRegisterForm?.addEventListener('submit', async (event) => {
         event.preventDefault();
 
-        const formData = new FormData(passwordRegisterForm);
+        const formData = Object.fromEntries(new FormData(passwordRegisterForm));
+        const result = await registerWithPassword(formData);
 
-        try {
-            const response = await fetch('/profile-password', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    Accept: 'application/json',
-                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') ?? '',
-                },
-                body: JSON.stringify(Object.fromEntries(formData)),
-            });
+        if (result.outcome === 'success') {
+            report(passkeyStatus, 'success', undefined, undefined);
+            window.location.href = result.redirect;
 
-            const data = await response.json();
-
-            if (!response.ok) {
-                const message = data.errors
-                    ? Object.values(data.errors).flat().join(' ')
-                    : (data.message ?? '登録に失敗しました');
-
-                throw new Error(message);
-            }
-
-            if (data.device_uuid) {
-                localStorage.setItem('device_uuid', data.device_uuid);
-                localStorage.setItem('auth_method', 'password');
-            }
-
-            window.location.href = data.redirect ?? '/';
-        } catch (error) {
-            if (status) {
-                status.textContent = `登録に失敗しました: ${error.message}`;
-            }
+            return;
         }
+
+        const messages = {
+            validation: joinErrors(result.errors),
+            server_error: strings.passwordRegistrationFailed,
+            network_error: strings.networkError,
+        };
+
+        report(passkeyStatus, 'failure', result.code, messages[result.code]);
     });
 
     signInForm?.addEventListener('submit', async (event) => {
         event.preventDefault();
 
-        const formData = new FormData(signInForm);
+        const formData = Object.fromEntries(new FormData(signInForm));
+        const result = await signInWithPassword(formData);
 
-        try {
-            const response = await fetch('/login', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    Accept: 'application/json',
-                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') ?? '',
-                    'X-Device-Uuid': localStorage.getItem('device_uuid') ?? '',
-                },
-                body: JSON.stringify(Object.fromEntries(formData)),
-            });
+        if (result.outcome === 'success') {
+            report(signInStatus, 'success', undefined, undefined);
+            window.location.href = result.redirect;
 
-            const data = await response.json();
-
-            if (!response.ok) {
-                const message = data.errors
-                    ? Object.values(data.errors).flat().join(' ')
-                    : (data.message ?? 'サインインに失敗しました');
-
-                throw new Error(message);
-            }
-
-            window.location.href = data.redirect ?? '/';
-        } catch (error) {
-            if (signInStatus) {
-                signInStatus.textContent = error.message;
-            }
+            return;
         }
+
+        const messages = {
+            validation: joinErrors(result.errors),
+            server_error: strings.signInFailed,
+            network_error: strings.networkError,
+        };
+
+        report(signInStatus, 'failure', result.code, messages[result.code]);
     });
+
+    if (deviceUuidEl && authMethodEl) {
+        const credentials = getDeviceCredentials();
+
+        deviceUuidEl.textContent = credentials.device_uuid ?? strings.deviceNone;
+        authMethodEl.textContent = credentials.auth_method ?? strings.deviceNone;
+
+        clearDeviceButton?.addEventListener('click', () => {
+            clearDeviceCredentials();
+
+            deviceUuidEl.textContent = strings.deviceNone;
+            authMethodEl.textContent = strings.deviceNone;
+
+            if (deviceResetStatus) {
+                deviceResetStatus.textContent = [strings.deviceCleared, strings.deviceNextStep].join(' ');
+            }
+        });
+    }
+
+    if (document.getElementById('account-deleted-page')) {
+        clearDeviceCredentials();
+    }
 }

@@ -4,6 +4,8 @@
     <div class="w-full max-w-sm">
         <h1 class="mb-4 text-lg">{{ __('easy-auth::profile.create_heading') }}</h1>
 
+        <p id="passkey-status" class="mb-4 text-sm text-red-600"></p>
+
         <form id="profile-create-form">
             <label for="name" class="block mb-1 text-sm">{{ __('easy-auth::profile.name') }}</label>
 
@@ -81,3 +83,14 @@
         </form>
     </div>
 @endsection
+
+@push('scripts')
+    @include('easy-auth::partials.js-strings', ['strings' => [
+        'nameRequired' => __('easy-auth::profile.name_required'),
+        'passkeyLabel' => __('easy-auth::profile.passkey_label'),
+        'passkeyRegistrationFailed' => __('easy-auth::profile.passkey_register_failed'),
+        'profileSaveFailed' => __('easy-auth::profile.save_failed'),
+        'passwordRegistrationFailed' => __('easy-auth::profile.password_register_failed'),
+        'networkError' => __('easy-auth::profile.network_error'),
+    ]])
+@endpush

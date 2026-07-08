@@ -16,4 +16,10 @@ return [
     'save' => '保存',
     'delete_heading' => 'アカウントを削除',
     'delete_description' => 'アカウントを完全に削除し、所属しているすべてのテナントから外れます。元に戻すことはできません。',
+    'name_required' => '名前を入力してください',
+    'passkey_label' => 'このデバイス',
+    'passkey_register_failed' => 'このデバイスでパスキーを作成できませんでした',
+    'save_failed' => 'プロフィールの保存に失敗しました',
+    'password_register_failed' => '登録に失敗しました',
+    'network_error' => 'サーバーに接続できませんでした。通信環境を確認して再度お試しください',
 ];

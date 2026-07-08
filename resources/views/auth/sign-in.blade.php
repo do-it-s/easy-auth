@@ -46,3 +46,10 @@
         </p>
     </div>
 @endsection
+
+@push('scripts')
+    @include('easy-auth::partials.js-strings', ['strings' => [
+        'signInFailed' => __('easy-auth::auth.sign_in_request_failed'),
+        'networkError' => __('easy-auth::auth.network_error'),
+    ]])
+@endpush

@@ -24,24 +24,9 @@
 @endsection
 
 @push('scripts')
-    <script>
-        const deviceUuidEl = document.getElementById('device-uuid');
-        const authMethodEl = document.getElementById('auth-method');
-        const statusEl = document.getElementById('status');
-        const noneLabel = @json(__('easy-auth::device.none'));
-        const clearedLabel = @json(__('easy-auth::device.cleared'));
-        const nextStepLabel = @json(__('easy-auth::device.next_step'));
-
-        deviceUuidEl.textContent = localStorage.getItem('device_uuid') ?? noneLabel;
-        authMethodEl.textContent = localStorage.getItem('auth_method') ?? noneLabel;
-
-        document.getElementById('clear').addEventListener('click', () => {
-            localStorage.removeItem('device_uuid');
-            localStorage.removeItem('auth_method');
-
-            deviceUuidEl.textContent = noneLabel;
-            authMethodEl.textContent = noneLabel;
-            statusEl.textContent = [clearedLabel, nextStepLabel].join(' ');
-        });
-    </script>
+    @include('easy-auth::partials.js-strings', ['strings' => [
+        'deviceNone' => __('easy-auth::device.none'),
+        'deviceCleared' => __('easy-auth::device.cleared'),
+        'deviceNextStep' => __('easy-auth::device.next_step'),
+    ]])
 @endpush

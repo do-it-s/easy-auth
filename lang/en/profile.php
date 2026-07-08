@@ -16,4 +16,10 @@ return [
     'save' => 'Save',
     'delete_heading' => 'Delete your account',
     'delete_description' => 'This permanently deletes your account and removes you from every tenant you belong to. This cannot be undone.',
+    'name_required' => 'Please enter a name.',
+    'passkey_label' => 'This device',
+    'passkey_register_failed' => 'Could not create a passkey on this device.',
+    'save_failed' => 'Failed to save your profile.',
+    'password_register_failed' => 'Failed to register.',
+    'network_error' => 'Could not reach the server. Please check your connection and try again.',
 ];

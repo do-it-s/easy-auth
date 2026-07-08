@@ -68,7 +68,6 @@ class User extends Authenticatable implements EasyAuthUser
 | `@yield('content')` | 各ビューの`@section('content')`の差し込み先 |
 | `@stack('scripts')` | `device/reset.blade.php`等が`@push('scripts')`する |
 | `<meta name="csrf-token" content="{{ csrf_token() }}">` | JS側のfetchが`X-CSRF-TOKEN`に使う |
-| `<p id="passkey-status"></p>` (任意のタグでよい) | このパッケージが提供するビュー(`profile/create`等)での登録失敗時のエラー文言の表示先 |
 
 ヘッダーのナビゲーションやブランディング、Alpine.js等のUIフレームワーク選択は上記以外、完全にアプリの自由。`$user->currentTenant()`, `$user->tenants`, `$tenant->isAdministeredBy()`, `$tenant->hasUsableBackupCode()`等のヘルパーを使ってヘッダーにテナント切替UIを組み込む場合、`@can('create', [\DoITs\EasyAuth\Models\Invitation::class, $tenant])`のようにこのパッケージのモデル名前空間を参照すること。
 
@@ -147,6 +146,52 @@ signInButton.addEventListener('click', async () => {
 - `attemptSignIn()`はクリックなど明確な操作からのみ呼ぶこと。DOM書き込み・画面遷移は一切行わないため、`outcome`に応じた表示・遷移は呼び出し側で用意する。
 - 旧バージョンはトップページ到達時に自動でサインインを試行していたが、本バージョンではこの自動試行を廃止した。アプリ側で上記のような明示的なUIを用意しないと、登録済みデバイスでもサインインできなくなる(後方互換を破る変更)。
 
+#### 登録・パスワードサインイン機能(プリミティブ / `initEasyAuth`)
+
+`registerPasskey` / `registerWithPassword` / `signInWithPassword`はDOM読み書きを一切行わないプリミティブで、`{ outcome: 'success', redirect }`または`{ outcome: 'failure', code, errors? }`を返す。`code`は`name_required` / `ceremony_failed` / `validation` / `server_error` / `network_error`のいずれか(`validation`の時だけ`errors`にLaravel側で翻訳済みのフィールド別メッセージが入る)。独自フォーム・独自UIをアプリ側で完全に組みたい場合はこれらを直接呼ぶ。
+
+```js
+import { registerPasskey, registerWithPassword, signInWithPassword } from '@do-it-s/easy-auth-js';
+
+const result = await registerPasskey({ name, passkeyLabel: 'My device' });
+
+if (result.outcome === 'success') {
+    window.location.href = result.redirect;
+} else {
+    // result.code に応じて自前のUIで表示する
+}
+```
+
+このパッケージ自身が同梱するデフォルトビュー(`profile/create.blade.php`, `auth/sign-in.blade.php`等)の既知のフォームIDにだけ配線する便利関数が`initEasyAuth()`で、これが上記プリミティブ+パスキー非対応時のパスワードフォーム自動切替のようなデフォルトビュー固有のUI気配りをまとめて行う。独自ビューを使うアプリはこの関数を呼ばなければ、この配線・UI気配りは自然に無効化される。
+
+```js
+import { initEasyAuth } from '@do-it-s/easy-auth-js';
+
+initEasyAuth();
+```
+
+デフォルトでは失敗時にこのパッケージ自身のビューが持つ状態表示要素(`#passkey-status`, `#sign-in-status`)に`textContent`で書き込む。トースト通知等、アプリ独自のUIに差し替えたい場合は`onStatus`を渡す(フォーム配線・WebAuthn儀式の呼び出し自体は`initEasyAuth()`に任せたまま、表示だけ差し替えられる):
+
+```js
+initEasyAuth({
+    onStatus: ({ outcome, code, message }) => {
+        showToast(message, outcome === 'success' ? 'alert-success' : 'alert-error');
+    },
+});
+```
+
+`message`はこのパッケージが用意した翻訳済み文言(サーバーバリデーションの場合は`errors`を結合したもの)。`code`は`outcome: 'failure'`の内訳で、必要ならさらに細かい分岐に使える。
+
+#### デバイスの認証情報(`getDeviceCredentials` / `clearDeviceCredentials`)
+
+`device_uuid`/`auth_method`という2つのlocalStorageキーを直接読み書きする代わりに使う。
+
+```js
+import { getDeviceCredentials, clearDeviceCredentials } from '@do-it-s/easy-auth-js';
+
+const { device_uuid, auth_method } = getDeviceCredentials();
+```
+
 ### 8. 例外ハンドラがJSONを返せることを確認
 
 このパッケージの`/login`・`/profile-password`等は`api/*`配下ではなく、`Accept: application/json`ヘッダーによる通常のコンテンツネゴシエーション(`Request::expectsJson()`のデフォルト挙動)でJSONを返す設計になっている。
@@ -165,7 +210,6 @@ signInButton.addEventListener('click', async () => {
 
 ## 既知の制限・将来の検討事項
 
-- エラー表示(`#passkey-status`, `#sign-in-status`への直接`textContent`書き込み)は現状ハードコードされており、アプリ側でトースト通知等の独自UIに差し替えることはできない。将来`initEasyAuth({ onMessage })`のようなコールバックオプションを追加して分離する余地がある(後方互換を崩さずに追加可能)。
 - パッケージ提供のビュー(`tenants/create.blade.php`等)に`@stack`/`@yield`等の差し込みポイントが無く、`vendor:publish`の対象にもなっていない。`TenantController::store`/`update`等の`validate()`が受け付けるフィールドや`Tenant`モデルの`fillable`もハードコードされており、アプリ側がテナント作成フォーム等に独自項目を追加する手段が無い。
 - テナント作成・ユーザー登録・招待redeem・脱退・アカウント削除など、主要な操作の前後にLaravel Eventが一つも発火しない。アプリ側で監査ログや外部サービス連携等のフックを挿入する手段が無い。
 - `EnsureProfileIsComplete`ミドルウェアは`$user->name === ''`のみでプロフィール完了を判定する。アプリが独自の必須プロフィール項目(電話番号等)を追加しても、このミドルウェアは関知せず素通りしてしまう。
