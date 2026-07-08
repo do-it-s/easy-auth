@@ -22,9 +22,11 @@ class ProfileController extends Controller
     /**
      * Show the registration page for a not-yet-created user.
      */
-    public function create(): View
+    public function create(Request $request): View
     {
-        return view('easy-auth::profile.create');
+        return view('easy-auth::profile.create', [
+            'hasPendingInvitation' => $request->session()->has('pending_invitation_token'),
+        ]);
     }
 
     /**

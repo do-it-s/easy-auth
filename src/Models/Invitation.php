@@ -8,9 +8,10 @@ use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Support\Str;
 
-#[Fillable(['tenant_id', 'role', 'token', 'label', 'expires_at', 'created_by', 'used_at', 'redeemed_by', 'is_backup_code'])]
+#[Fillable(['tenant_id', 'role', 'token', 'label', 'expires_at', 'max_uses', 'created_by', 'used_at', 'redeemed_by', 'revoked_at', 'is_backup_code'])]
 class Invitation extends Model
 {
     use HasFactory;
@@ -28,6 +29,7 @@ class Invitation extends Model
         return [
             'expires_at' => 'datetime',
             'used_at' => 'datetime',
+            'revoked_at' => 'datetime',
             'is_backup_code' => 'boolean',
         ];
     }
@@ -55,11 +57,26 @@ class Invitation extends Model
     /**
      * The user who redeemed this invitation.
      *
+     * Only meaningful for backup codes, which still record a single
+     * redeemer here. Ordinary (possibly multi-use) invitations record
+     * every redemption in {@see redemptions()} instead.
+     *
      * @return BelongsTo<EasyAuthUser, $this>
      */
     public function redeemer(): BelongsTo
     {
         return $this->belongsTo(config('auth.providers.users.model'), 'redeemed_by');
+    }
+
+    /**
+     * The redemption log for this invitation. Not used by backup codes,
+     * which are single-shot and reissued rather than reused.
+     *
+     * @return HasMany<InvitationRedemption, $this>
+     */
+    public function redemptions(): HasMany
+    {
+        return $this->hasMany(InvitationRedemption::class);
     }
 
     /**
@@ -83,14 +100,48 @@ class Invitation extends Model
         return $this->expires_at !== null && $this->expires_at->isPast();
     }
 
+    /**
+     * Determine whether an administrator has explicitly disabled this
+     * invitation, independent of expiration or exhausted uses.
+     */
+    public function isRevoked(): bool
+    {
+        return $this->revoked_at !== null;
+    }
+
+    /**
+     * Determine whether this invitation has no redemptions left. Backup
+     * codes remain single-shot (`used_at`); ordinary invitations are
+     * exhausted once their redemption count reaches `max_uses` (a null
+     * `max_uses` means unlimited, mirroring `expires_at`'s null-means-
+     * unbounded convention).
+     */
     public function isUsed(): bool
     {
-        return $this->used_at !== null;
+        if ($this->is_backup_code) {
+            return $this->used_at !== null;
+        }
+
+        return $this->max_uses !== null && $this->redemptions()->count() >= $this->max_uses;
     }
 
     public function isUsable(): bool
     {
-        return ! $this->isExpired() && ! $this->isUsed();
+        return ! $this->isExpired() && ! $this->isRevoked() && ! $this->isUsed();
+    }
+
+    /**
+     * The number of redemptions left before this invitation is exhausted,
+     * or null if it has unlimited uses (backup codes included, since they
+     * are reissued rather than counted).
+     */
+    public function usesRemaining(): ?int
+    {
+        if ($this->is_backup_code || $this->max_uses === null) {
+            return null;
+        }
+
+        return max(0, $this->max_uses - $this->redemptions()->count());
     }
 
     /**
@@ -112,8 +163,8 @@ class Invitation extends Model
 
     /**
      * Add the given user to this invitation's tenant with the invited role
-     * (or promote them to it, if already a member), and mark the
-     * invitation as used.
+     * (or promote them to it, if already a member), and record the
+     * redemption.
      */
     public function redeemFor(EasyAuthUser $user): void
     {
@@ -129,9 +180,18 @@ class Invitation extends Model
             ]);
         }
 
-        $this->update([
-            'used_at' => now(),
-            'redeemed_by' => $user->id,
+        if ($this->is_backup_code) {
+            $this->update([
+                'used_at' => now(),
+                'redeemed_by' => $user->id,
+            ]);
+
+            return;
+        }
+
+        $this->redemptions()->create([
+            'user_id' => $user->id,
+            'redeemed_at' => now(),
         ]);
     }
 

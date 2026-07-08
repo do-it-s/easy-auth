@@ -22,4 +22,7 @@ return [
     'save_failed' => 'Failed to save your profile.',
     'password_register_failed' => 'Failed to register.',
     'network_error' => 'Could not reach the server. Please check your connection and try again.',
+    'already_registered_notice' => 'This device already has an account. If you meant to sign in, go back home instead.',
+    'already_registered_go_home' => 'Go home',
+    'already_registered_reinvite' => "I can't get in anymore, and I'm using this invitation to start over",
 ];

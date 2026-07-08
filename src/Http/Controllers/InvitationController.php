@@ -21,7 +21,11 @@ class InvitationController extends Controller
 
         return view('easy-auth::tenants.invitations.index', [
             'tenant' => $tenant,
-            'invitations' => $tenant->invitations()->where('is_backup_code', false)->latest()->get(),
+            'invitations' => $tenant->invitations()
+                ->where('is_backup_code', false)
+                ->with('redemptions.user')
+                ->latest()
+                ->get(),
         ]);
     }
 
@@ -60,6 +64,7 @@ class InvitationController extends Controller
             'role' => ['required', Rule::in($allowedRoles)],
             'label' => ['nullable', 'string', 'max:255'],
             'expires_at' => ['nullable', 'date', 'after:now'],
+            'max_uses' => ['nullable', 'integer', 'min:1'],
         ], trans('easy-auth::validation'));
 
         $token = Invitation::generateToken();
@@ -69,6 +74,7 @@ class InvitationController extends Controller
             'token' => Invitation::hashToken($token),
             'label' => $validated['label'] ?? null,
             'expires_at' => $validated['expires_at'] ?? null,
+            'max_uses' => $validated['max_uses'] ?? null,
             'created_by' => $request->user()->id,
         ]);
 
@@ -84,7 +90,7 @@ class InvitationController extends Controller
     {
         $this->authorize('delete', $invitation);
 
-        $invitation->update(['used_at' => now()]);
+        $invitation->update(['revoked_at' => now()]);
 
         return redirect()->route('tenants.invitations.index', $tenant);
     }

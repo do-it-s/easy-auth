@@ -276,6 +276,9 @@ export function initEasyAuth({ onStatus } = {}) {
     const authMethodEl = document.getElementById('auth-method');
     const deviceResetStatus = document.getElementById('status');
     const clearDeviceButton = document.getElementById('clear');
+    const alreadyRegisteredNotice = document.getElementById('already-registered-notice');
+    const registrationForms = document.getElementById('registration-forms');
+    const alreadyRegisteredReinviteButton = document.getElementById('already-registered-reinvite');
 
     function report(el, outcome, code, message) {
         if (onStatus) {
@@ -306,6 +309,35 @@ export function initEasyAuth({ onStatus } = {}) {
     // Browsers without passkey support go straight to the password form.
     if (profileCreateForm && !Passkeys.isSupported()) {
         showPasswordRegisterForm();
+    }
+
+    // Guards against accidentally registering a duplicate account on a
+    // device that already has one (e.g. re-scanning a reusable invitation
+    // QR code). Only rendered by the view when a pending invitation is in
+    // play; the registration forms stay visible by default so this is a
+    // no-op when localStorage has no device_uuid.
+    if (alreadyRegisteredNotice && registrationForms) {
+        const { device_uuid: deviceUuid, auth_method: authMethod } = getDeviceCredentials();
+
+        if (deviceUuid) {
+            alreadyRegisteredNotice.classList.remove('hidden');
+            registrationForms.classList.add('hidden');
+
+            alreadyRegisteredReinviteButton?.addEventListener('click', () => {
+                if (authMethod === 'password') {
+                    // Password-fallback devices must go through /login's
+                    // existing device-mismatch self-service account
+                    // deletion flow before a fresh registration can use
+                    // the same email again.
+                    window.location.href = '/login';
+
+                    return;
+                }
+
+                alreadyRegisteredNotice.classList.add('hidden');
+                registrationForms.classList.remove('hidden');
+            });
+        }
     }
 
     showPasswordRegisterButton?.addEventListener('click', () => showPasswordRegisterForm());

@@ -46,6 +46,20 @@ test('completing the profile via json returns the intended redirect target', fun
     expect($user->refresh()->name)->toBe('Taro');
 });
 
+test('the registration page shows the already-registered gate markup when a pending invitation is in session', function () {
+    $response = $this->withSession(['pending_invitation_token' => 'some-token'])->get(route('profile.create'));
+
+    $response->assertOk();
+    $response->assertSee('id="already-registered-notice"', false);
+});
+
+test('the registration page omits the already-registered gate markup with no pending invitation', function () {
+    $response = $this->get(route('profile.create'));
+
+    $response->assertOk();
+    $response->assertDontSee('id="already-registered-notice"', false);
+});
+
 test('completing the profile honors a redeemed invitation over a stale intended url', function () {
     $user = User::factory()->create(['name' => '']);
 

@@ -22,4 +22,7 @@ return [
     'save_failed' => 'プロフィールの保存に失敗しました',
     'password_register_failed' => '登録に失敗しました',
     'network_error' => 'サーバーに接続できませんでした。通信環境を確認して再度お試しください',
+    'already_registered_notice' => 'この端末は既に登録済みです。サインインしたい場合はホームに戻ってください。',
+    'already_registered_go_home' => 'ホームへ戻る',
+    'already_registered_reinvite' => '入れなくなったので、この招待で登録し直す',
 ];

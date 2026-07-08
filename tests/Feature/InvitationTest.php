@@ -56,6 +56,38 @@ test('admin can issue an eternal admin invitation', function () {
     expect($invitation->expires_at)->toBeNull();
 });
 
+test('admin can issue a reusable invitation with a maximum number of uses', function () {
+    $admin = User::factory()->create(['name' => 'Admin']);
+    $tenant = Tenant::factory()->create();
+    attachTenantMember($tenant, $admin, Tenant::ADMIN_ROLE);
+
+    $response = $this->actingAs($admin)->post(route('tenants.invitations.store', $tenant), [
+        'role' => Tenant::MEMBER_ROLE,
+        'max_uses' => 3,
+    ]);
+
+    $response->assertRedirect(route('tenants.invitations.create', $tenant));
+
+    $invitation = Invitation::where('tenant_id', $tenant->id)->first();
+    expect($invitation->max_uses)->toBe(3);
+});
+
+test('admin can issue an invitation with unlimited uses by leaving max_uses blank', function () {
+    $admin = User::factory()->create(['name' => 'Admin']);
+    $tenant = Tenant::factory()->create();
+    attachTenantMember($tenant, $admin, Tenant::ADMIN_ROLE);
+
+    $response = $this->actingAs($admin)->post(route('tenants.invitations.store', $tenant), [
+        'role' => Tenant::MEMBER_ROLE,
+        'max_uses' => '',
+    ]);
+
+    $response->assertRedirect(route('tenants.invitations.create', $tenant));
+
+    $invitation = Invitation::where('tenant_id', $tenant->id)->first();
+    expect($invitation->max_uses)->toBeNull();
+});
+
 test('members can issue member invitations when member invites are enabled', function () {
     $member = User::factory()->create(['name' => 'Member']);
     $tenant = Tenant::factory()->create(['member_invites_enabled' => true]);
@@ -133,7 +165,8 @@ test('admin can revoke an invitation', function () {
     $response = $this->actingAs($admin)->delete(route('tenants.invitations.destroy', [$tenant, $invitation]));
 
     $response->assertRedirect(route('tenants.invitations.index', $tenant));
-    expect($invitation->refresh()->isUsed())->toBeTrue();
+    expect($invitation->refresh()->isRevoked())->toBeTrue();
+    expect($invitation->isUsable())->toBeFalse();
 });
 
 test('guest opening an invitation link is sent to registration with the token stored', function () {
@@ -166,7 +199,7 @@ test('authenticated non member can redeem an invitation and joins the tenant', f
 
     $invitation->refresh();
     expect($invitation->isUsed())->toBeTrue();
-    expect($invitation->redeemed_by)->toBe($user->id);
+    expect($invitation->redemptions()->where('user_id', $user->id)->exists())->toBeTrue();
 });
 
 test('a member can redeem a same-role invitation to refresh their membership', function () {
@@ -251,6 +284,59 @@ test('a used invitation cannot be redeemed', function () {
     Invitation::factory()->for($tenant)->used()->create(['token' => Invitation::hashToken($token)]);
 
     $this->get(route('invitations.show', $token))->assertOk();
+});
+
+test('a reusable invitation can be redeemed by multiple different users up to its max uses', function () {
+    $tenant = Tenant::factory()->create();
+    $token = Invitation::generateToken();
+    $invitation = Invitation::factory()->for($tenant)->reusable(2)->create([
+        'token' => Invitation::hashToken($token),
+    ]);
+
+    $first = User::factory()->create();
+    $second = User::factory()->create();
+    $third = User::factory()->create();
+
+    $this->actingAs($first)->post(route('invitations.redeem', $token))->assertRedirect(route('home'));
+    $this->actingAs($second)->post(route('invitations.redeem', $token))->assertRedirect(route('home'));
+
+    expect($tenant->hasMember($first))->toBeTrue();
+    expect($tenant->hasMember($second))->toBeTrue();
+    expect($invitation->refresh()->isUsed())->toBeTrue();
+
+    $this->actingAs($third)->get(route('invitations.show', $token))->assertOk();
+    expect($tenant->hasMember($third))->toBeFalse();
+});
+
+test('an invitation with unlimited uses can be redeemed many times', function () {
+    $tenant = Tenant::factory()->create();
+    $token = Invitation::generateToken();
+    $invitation = Invitation::factory()->for($tenant)->reusable()->create([
+        'token' => Invitation::hashToken($token),
+    ]);
+
+    foreach (range(1, 5) as $i) {
+        $user = User::factory()->create();
+        $this->actingAs($user)->post(route('invitations.redeem', $token))->assertRedirect(route('home'));
+        expect($tenant->hasMember($user))->toBeTrue();
+    }
+
+    expect($invitation->refresh()->isUsed())->toBeFalse();
+    expect($invitation->isUsable())->toBeTrue();
+});
+
+test('a revoked invitation cannot be redeemed even with uses remaining', function () {
+    $tenant = Tenant::factory()->create();
+    $token = Invitation::generateToken();
+    $invitation = Invitation::factory()->for($tenant)->reusable(5)->create([
+        'token' => Invitation::hashToken($token),
+        'revoked_at' => now(),
+    ]);
+
+    $user = User::factory()->create();
+
+    $this->actingAs($user)->get(route('invitations.show', $token))->assertOk();
+    expect($tenant->hasMember($user))->toBeFalse();
 });
 
 test('admin can update tenant settings including member invites toggle', function () {

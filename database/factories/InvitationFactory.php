@@ -28,8 +28,20 @@ class InvitationFactory extends Factory
             'token' => Invitation::hashToken(Invitation::generateToken()),
             'label' => null,
             'expires_at' => now()->addWeek(),
+            'max_uses' => 1,
             'created_by' => $userModel::factory(),
         ];
+    }
+
+    /**
+     * Indicate how many times the invitation can be redeemed (null for
+     * unlimited uses).
+     */
+    public function reusable(?int $maxUses = null): static
+    {
+        return $this->state(fn (array $attributes) => [
+            'max_uses' => $maxUses,
+        ]);
     }
 
     /**
@@ -66,7 +78,8 @@ class InvitationFactory extends Factory
     }
 
     /**
-     * Indicate that the invitation has already been used.
+     * Indicate that the invitation has already been used (its redemptions
+     * have reached max_uses, or, for backup codes, used_at is set).
      */
     public function used(): static
     {
@@ -75,7 +88,14 @@ class InvitationFactory extends Factory
         return $this->state(fn (array $attributes) => [
             'used_at' => now(),
             'redeemed_by' => $userModel::factory(),
-        ]);
+        ])->afterCreating(function (Invitation $invitation) use ($userModel) {
+            if (! $invitation->is_backup_code) {
+                $invitation->redemptions()->create([
+                    'user_id' => $userModel::factory()->create()->id,
+                    'redeemed_at' => now(),
+                ]);
+            }
+        });
     }
 
     /**

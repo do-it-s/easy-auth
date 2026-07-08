@@ -28,17 +28,37 @@
 
                 <p>
                     {{ __('easy-auth::invitations.status_label') }}
-                    @if ($invitation->isUsed())
-                        {{ __('easy-auth::invitations.status_used') }}
+                    @if ($invitation->isRevoked())
+                        {{ __('easy-auth::invitations.status_revoked') }}
                     @elseif ($invitation->isExpired())
                         {{ __('easy-auth::invitations.status_expired') }}
+                    @elseif ($invitation->isUsed())
+                        {{ __('easy-auth::invitations.status_used') }}
                     @else
                         {{ __('easy-auth::invitations.status_active') }}
                     @endif
                 </p>
 
+                <p>
+                    {{ __('easy-auth::invitations.uses_label') }}
+                    @if ($invitation->max_uses === null)
+                        {{ __('easy-auth::invitations.uses_unlimited', ['used' => $invitation->redemptions->count()]) }}
+                    @else
+                        {{ __('easy-auth::invitations.uses_used_of_max', ['used' => $invitation->redemptions->count(), 'max' => $invitation->max_uses]) }}
+                    @endif
+                </p>
+
+                @if ($invitation->redemptions->isNotEmpty())
+                    <p class="mt-2">{{ __('easy-auth::invitations.redeemed_by_heading') }}</p>
+                    <ul class="list-disc list-inside">
+                        @foreach ($invitation->redemptions as $redemption)
+                            <li>{{ __('easy-auth::invitations.redeemed_by_entry', ['name' => $redemption->user->name, 'datetime' => $redemption->redeemed_at->format('Y-m-d H:i')]) }}</li>
+                        @endforeach
+                    </ul>
+                @endif
+
                 @can('delete', $invitation)
-                    @if ($invitation->isUsable())
+                    @if (! $invitation->isRevoked() && ! $invitation->isExpired())
                         <form method="POST" action="{{ route('tenants.invitations.destroy', [$tenant, $invitation]) }}" class="mt-2">
                             @csrf
                             @method('DELETE')
