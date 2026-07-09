@@ -222,20 +222,27 @@ export async function signInWithPassword({ email, password }) {
     return { outcome: 'success', redirect: result.data.redirect ?? '/' };
 }
 
+/**
+ * Merges the string tables emitted by every js-strings partial present on
+ * the page (each functional component includes its own copy). Domain
+ * string keys are assumed non-overlapping (e.g. `signInFailed` is auth-only,
+ * `nameRequired` is profile-only), but if two elements ever did share a key,
+ * later elements in document order win since each is Object.assign'd over
+ * the accumulator in sequence. A parse failure on one element is isolated
+ * to that element and does not affect the others.
+ */
 function readStrings() {
-    const el = document.getElementById('easy-auth-strings');
+    const elements = document.querySelectorAll('[data-easy-auth-strings]');
 
-    if (!el) {
-        return {};
-    }
+    return Array.from(elements).reduce((strings, el) => {
+        try {
+            return Object.assign(strings, JSON.parse(el.textContent));
+        } catch (error) {
+            console.error(error);
 
-    try {
-        return JSON.parse(el.textContent);
-    } catch (error) {
-        console.error(error);
-
-        return {};
-    }
+            return strings;
+        }
+    }, {});
 }
 
 function joinErrors(errors) {
@@ -265,8 +272,6 @@ export function initEasyAuth({ onStatus } = {}) {
     const profileCreateForm = document.getElementById('profile-create-form');
     const showPasswordRegisterButton = document.getElementById('show-password-register');
     const passwordRegisterForm = document.getElementById('password-register-form');
-    const showLeaveTenantButton = document.getElementById('show-leave-tenant');
-    const leaveTenantSection = document.getElementById('leave-tenant-section');
     const signInForm = document.getElementById('sign-in-form');
     const nameInput = document.getElementById('name');
     const registerNameInput = document.getElementById('register-name');
@@ -341,11 +346,6 @@ export function initEasyAuth({ onStatus } = {}) {
     }
 
     showPasswordRegisterButton?.addEventListener('click', () => showPasswordRegisterForm());
-
-    showLeaveTenantButton?.addEventListener('click', () => {
-        showLeaveTenantButton.classList.add('hidden');
-        leaveTenantSection?.classList.remove('hidden');
-    });
 
     profileCreateForm?.addEventListener('submit', async (event) => {
         event.preventDefault();

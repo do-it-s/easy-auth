@@ -41,6 +41,10 @@ class EasyAuthServiceProvider extends ServiceProvider
             __DIR__.'/../config/easy-auth.php' => config_path('easy-auth.php'),
         ], 'easy-auth-config');
 
+        $this->publishes([
+            __DIR__.'/../resources/views' => resource_path('views/vendor/easy-auth'),
+        ], 'easy-auth-views');
+
         $this->loadMigrationsFrom(__DIR__.'/../database/migrations');
         $this->loadViewsFrom(__DIR__.'/../resources/views', 'easy-auth');
         $this->loadTranslationsFrom(__DIR__.'/../lang', 'easy-auth');

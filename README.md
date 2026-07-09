@@ -210,8 +210,7 @@ const { device_uuid, auth_method } = getDeviceCredentials();
 
 ## 既知の制限・将来の検討事項
 
-- パッケージ提供のビュー(`tenants/create.blade.php`等)に`@stack`/`@yield`等の差し込みポイントが無く、`vendor:publish`の対象にもなっていない。`TenantController::store`/`update`等の`validate()`が受け付けるフィールドや`Tenant`モデルの`fillable`もハードコードされており、アプリ側がテナント作成フォーム等に独自項目を追加する手段が無い。
-- テナント作成・ユーザー登録・招待redeem・脱退・アカウント削除など、主要な操作の前後にLaravel Eventが一つも発火しない。アプリ側で監査ログや外部サービス連携等のフックを挿入する手段が無い。
+- パッケージ提供のビュー・コントローラのアプリ側カスタマイズ手段(丸ごと差し替え・スロット差し込み・変更操作前後のLaravel Event)を拡充中。詳細な設計・進捗は`dev-docs/package-boundary/00-plan.md`を参照。
 - `EnsureProfileIsComplete`ミドルウェアは`$user->name === ''`のみでプロフィール完了を判定する。アプリが独自の必須プロフィール項目(電話番号等)を追加しても、このミドルウェアは関知せず素通りしてしまう。
 - パスキー登録時のWebAuthnオプション(`userVerification`・`residentKey`)は`laravel/passkeys`のデフォルト値(いずれも`required`)に委ねており、easy-auth側で上書きする設定項目は無い。
 - 登録時にAuthenticatorのBE(Backup Eligible)フラグを確認し、クラウド同期可能なパスキー(iCloudキーチェーン等で複数デバイスに同期されるもの)の登録を拒否する機能を`DoITs\EasyAuth\Actions\RejectSyncedPasskey`として用意している。デバイスUUID束縛は「招待されたデバイスである」ことの証明であり、同期パスキーはこの保証を(招待redeem時に組織外のデバイスでも人の正当性チェックを通過できてしまう形で)弱め得る。しかしこの拒否を有効にすると、ブラウザのパスワードマネージャー拡張機能(1Password等)がOS側のパスキー選択ダイアログからプラットフォーム認証器(Windows Hello等)を実質排除してしまう環境で、デバイス専用パスキーを新規作成する手段が無くなり、登録自体が不可能になるケースが実機で確認された。かんたん認証はメール/パスワードへのフォールバックを意図的に持たない設計のため、この詰みは「組織境界が同期パスキー分だけ弱まる」リスクより重いと判断し、`config('easy-auth.reject_backup_eligible_passkeys')`(`.env`の`EASY_AUTH_REJECT_BACKUP_ELIGIBLE_PASSKEYS`)でデフォルトoffにしている。サービス単位でoffからonに切り替える設定は用意した(`php artisan vendor:publish --tag=easy-auth-config`または`.env`で上書き)。

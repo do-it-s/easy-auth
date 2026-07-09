@@ -1,1 +1,1 @@
-<script type="application/json" id="easy-auth-strings">@json($strings)</script>
+<script type="application/json" data-easy-auth-strings>@json($strings)</script>

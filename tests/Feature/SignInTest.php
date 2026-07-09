@@ -85,6 +85,14 @@ test('sign-in fails with an incorrect password', function () {
     $this->assertGuest();
 });
 
+test('the sign-in page renders its strings with the shared data attribute, not the old duplicate-prone id', function () {
+    $response = $this->get('/login');
+
+    $response->assertOk();
+    $response->assertSee('data-easy-auth-strings', false);
+    $response->assertDontSee('id="easy-auth-strings"', false);
+});
+
 test('authenticated users are redirected away from the sign-in page', function () {
     $user = User::factory()->create();
 
