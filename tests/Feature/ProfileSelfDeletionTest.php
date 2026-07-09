@@ -1,8 +1,11 @@
 <?php
 
+use DoITs\EasyAuth\Events\AccountDeleted;
+use DoITs\EasyAuth\Events\AccountDeleting;
 use DoITs\EasyAuth\Models\Invitation;
 use DoITs\EasyAuth\Models\Tenant;
 use DoITs\EasyAuth\Tests\Fixtures\User;
+use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Str;
 
 test('delete confirmation page is shown to a non-admin user', function () {
@@ -12,6 +15,7 @@ test('delete confirmation page is shown to a non-admin user', function () {
 
     $response->assertOk();
     $response->assertSee('Taro');
+    $response->assertSee('id="name"', false);
 });
 
 test('a user with no tenants can view the delete confirmation page', function () {
@@ -90,6 +94,26 @@ test('confirming with the wrong name does not delete the account', function () {
     $response->assertRedirect();
     $response->assertSessionHasErrors('name');
     $this->assertDatabaseHas('users', ['id' => $user->id]);
+});
+
+test('a non-admin member deleting their own account dispatches AccountDeleting and AccountDeleted', function () {
+    Event::fake([AccountDeleting::class, AccountDeleted::class]);
+    $user = User::factory()->create(['name' => 'Taro']);
+
+    $this->actingAs($user)->delete(route('profile.delete'), ['name' => 'Taro']);
+
+    Event::assertDispatched(AccountDeleting::class, fn ($event) => $event->user->is($user));
+    Event::assertDispatched(AccountDeleted::class, fn ($event) => $event->user->is($user));
+});
+
+test('confirming with the wrong name does not dispatch AccountDeleting or AccountDeleted', function () {
+    Event::fake([AccountDeleting::class, AccountDeleted::class]);
+    $user = User::factory()->create(['name' => 'Taro']);
+
+    $this->actingAs($user)->delete(route('profile.delete'), ['name' => 'Wrong Name']);
+
+    Event::assertNotDispatched(AccountDeleting::class);
+    Event::assertNotDispatched(AccountDeleted::class);
 });
 
 test('confirming with a blank name does not delete the account', function () {

@@ -276,6 +276,7 @@ export function initEasyAuth({ onStatus } = {}) {
     const nameInput = document.getElementById('name');
     const registerNameInput = document.getElementById('register-name');
     const passkeyStatus = document.getElementById('passkey-status');
+    const passwordRegistrationStatus = document.getElementById('password-registration-status');
     const signInStatus = document.getElementById('sign-in-status');
     const deviceUuidEl = document.getElementById('device-uuid');
     const authMethodEl = document.getElementById('auth-method');
@@ -379,7 +380,7 @@ export function initEasyAuth({ onStatus } = {}) {
         const result = await registerWithPassword(formData);
 
         if (result.outcome === 'success') {
-            report(passkeyStatus, 'success', undefined, undefined);
+            report(passwordRegistrationStatus ?? passkeyStatus, 'success', undefined, undefined);
             window.location.href = result.redirect;
 
             return;
@@ -391,7 +392,7 @@ export function initEasyAuth({ onStatus } = {}) {
             network_error: strings.networkError,
         };
 
-        report(passkeyStatus, 'failure', result.code, messages[result.code]);
+        report(passwordRegistrationStatus ?? passkeyStatus, 'failure', result.code, messages[result.code]);
     });
 
     signInForm?.addEventListener('submit', async (event) => {

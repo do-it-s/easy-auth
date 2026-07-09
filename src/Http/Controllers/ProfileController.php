@@ -4,6 +4,11 @@ namespace DoITs\EasyAuth\Http\Controllers;
 
 use DoITs\EasyAuth\Actions\RedeemPendingInvitation;
 use DoITs\EasyAuth\Actions\RejectSyncedPasskey;
+use DoITs\EasyAuth\Events\AccountDeleted;
+use DoITs\EasyAuth\Events\AccountDeleting;
+use DoITs\EasyAuth\Events\ProfileUpdated;
+use DoITs\EasyAuth\Events\ProfileUpdating;
+use DoITs\EasyAuth\Events\UserRegistered;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
@@ -76,6 +81,8 @@ class ProfileController extends Controller
 
         $device = $user->device()->create(['uuid' => (string) Str::uuid()]);
 
+        UserRegistered::dispatch($user, 'passkey');
+
         Auth::login($user, config('easy-auth.remember_me'));
 
         $invitation = $redeemPendingInvitation($request, $user);
@@ -118,7 +125,13 @@ class ProfileController extends Controller
             'name' => ['required', 'string', 'max:255'],
         ], trans('easy-auth::validation'));
 
-        $request->user()->update($validated);
+        $user = $request->user();
+
+        ProfileUpdating::dispatch($user, $validated);
+
+        $user->update($validated);
+
+        ProfileUpdated::dispatch($user);
 
         $postRegistrationRedirect = $request->session()->pull('post_registration_redirect');
 
@@ -176,7 +189,11 @@ class ProfileController extends Controller
         // had just marked as deleted (save() inserts once exists is false).
         Auth::guard('web')->logout();
 
+        AccountDeleting::dispatch($user);
+
         $user->delete();
+
+        AccountDeleted::dispatch($user);
 
         $request->session()->invalidate();
         $request->session()->regenerateToken();

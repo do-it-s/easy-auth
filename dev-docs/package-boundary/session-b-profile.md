@@ -45,10 +45,24 @@
 - `ProfileController::update`(名前編集)前後: `ProfileUpdating`/`ProfileUpdated`
 - `ProfileController::destroy`または対応する自己削除処理前後: `AccountDeleting`/`AccountDeleted`(セッションAの`AccountDeletionController`用と同じイベントクラスを再利用できないか先に確認すること。`profile/delete.blade.php`のセルフサービス削除と`auth/account-deletion.blade.php`のログイン失敗契機の削除は、最終的に同じ「Userが削除された」という事象であれば同一イベントクラスを使い、発火元コントローラが違うだけにするのが望ましい。セッションAの実装が先に存在する場合はそちらのイベントクラスを`use`する)
 
+## 追加対応(コントローラレビュー後、`session-b-report.md`記載の懸念への対応)
+
+`session-b-report.md`で報告された「`#passkey-status`が`password-registration-form`からも書き込まれる共有要素になっている」問題を修正する。現状、`password-registration-form`を`passkey-registration-form`と組み合わせずに単独配置すると、送信エラーが表示されない(`report()`が`el`未検出でサイレントに無視する)。
+
+**修正方針**:
+
+1. `components/profile/password-registration-form.blade.php`に、自分専用のステータス要素`<p id="password-registration-status" class="mb-4 text-sm text-red-600"></p>`をフォームの直前に追加する。
+2. `resources/js/index.js`の`initEasyAuth()`内、`passwordRegisterForm`の送信ハンドラが`report()`に渡す対象を、`document.getElementById('password-registration-status') ?? passkeyStatus`のように変更する(自身の要素が存在すればそちらを優先、無ければ従来通り`passkeyStatus`にフォールバックする)。これにより、デフォルトの組み合わせページ(両フォームが同居)では新しい`#password-registration-status`が優先して使われるようになり、見た目上のエラー表示位置がパスワードフォーム自身の直前に移る(`passkey-registration-form`と組み合わせなくても機能する状態になることの副作用として許容する)。
+3. `passkeyStatus`変数の取得(`document.getElementById('passkey-status')`)自体は`profileCreateForm`(パスキー登録)の送信ハンドラがそのまま使うため変更不要。
+
+**確認方法**: `password-registration-form`単体をレンダリングするテスト(コンポーネント単体テストまたは一時的な専用Bladeビュー経由)で`#password-registration-status`が出力されることを確認する。既存の`profile/create`結合テストが、新しい要素が追加されても既存アサーションを壊していないことを確認する。ブラウザでの実機確認は必須ではないが、可能であれば`profile/create`ページでパスワード登録フォールバックのエラーが新しい位置に表示されることを目視確認する。
+
+**完了条件への追加**: 上記変更後も`./vendor/bin/pest`全件パス・`./vendor/bin/pint --test`パスを再確認し、`session-b-report.md`に追記(このセクションへの対応を行った旨)すること。
+
 ## やらないこと
 
 - `auth`・`tenants`・`invitations`ドメインのビュー(他セッション担当)
-- `js-strings`仕組み自体の変更(セッション0で完了済みの前提)
+- 上記「追加対応」以外の`js-strings`仕組み自体の変更(セッション0で完了済みの前提)
 
 ## 完了条件
 

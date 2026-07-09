@@ -6,9 +6,12 @@ use DoITs\EasyAuth\Contracts\EasyAuthUser;
 use Illuminate\Foundation\Events\Dispatchable;
 
 /**
- * Dispatched by AccountDeletionController::destroy() immediately after
- * $user->delete(). The model instance is still usable for reading its
- * (now-deleted) attributes, e.g. for an audit log entry.
+ * Dispatched immediately after $user->delete(), by AccountDeletionController
+ * ::destroy() (device-mismatch lockout flow) and ProfileController::destroy()
+ * (self-service deletion from a signed-in session) alike — both represent
+ * the same "a User was deleted" event, just reached via different routes.
+ * The model instance is still usable for reading its (now-deleted)
+ * attributes, e.g. for an audit log entry.
  */
 class AccountDeleted
 {

@@ -3,6 +3,7 @@
 namespace DoITs\EasyAuth\Http\Controllers\Auth;
 
 use DoITs\EasyAuth\Actions\RedeemPendingInvitation;
+use DoITs\EasyAuth\Events\UserRegistered;
 use DoITs\EasyAuth\Http\Controllers\Controller;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -33,6 +34,8 @@ class RegisterController extends Controller
         ]);
 
         $device = $user->device()->create(['uuid' => (string) Str::uuid()]);
+
+        UserRegistered::dispatch($user, 'password');
 
         Auth::login($user, config('easy-auth.remember_me'));
 

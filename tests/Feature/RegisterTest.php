@@ -1,9 +1,11 @@
 <?php
 
+use DoITs\EasyAuth\Events\UserRegistered;
 use DoITs\EasyAuth\Models\Invitation;
 use DoITs\EasyAuth\Models\Tenant;
 use DoITs\EasyAuth\Tests\Fixtures\User;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Event;
 
 test('a user is remembered past the browser session immediately upon registering, by default', function () {
     $response = $this->postJson('/profile-password', [
@@ -98,6 +100,21 @@ test('registering with mismatched password confirmation fails validation', funct
     ]);
 
     $response->assertUnprocessable()->assertJsonValidationErrors('password');
+});
+
+test('registering with an email and password dispatches UserRegistered with the password auth method', function () {
+    Event::fake([UserRegistered::class]);
+
+    $this->postJson('/profile-password', [
+        'name' => 'Taro',
+        'email' => 'taro@example.com',
+        'password' => 'password',
+        'password_confirmation' => 'password',
+    ]);
+
+    $user = User::where('email', 'taro@example.com')->first();
+
+    Event::assertDispatched(UserRegistered::class, fn ($event) => $event->user->is($user) && $event->authMethod === 'password');
 });
 
 test('authenticated users cannot access the registration endpoint', function () {
