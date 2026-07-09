@@ -2,6 +2,10 @@
 
 namespace DoITs\EasyAuth\Http\Controllers;
 
+use DoITs\EasyAuth\Events\InvitationCreated;
+use DoITs\EasyAuth\Events\InvitationCreating;
+use DoITs\EasyAuth\Events\InvitationRevoked;
+use DoITs\EasyAuth\Events\InvitationRevoking;
 use DoITs\EasyAuth\Models\Invitation;
 use DoITs\EasyAuth\Models\Tenant;
 use Endroid\QrCode\Builder\Builder;
@@ -69,7 +73,9 @@ class InvitationController extends Controller
 
         $token = Invitation::generateToken();
 
-        $tenant->invitations()->create([
+        InvitationCreating::dispatch($tenant, $request->user(), $validated);
+
+        $invitation = $tenant->invitations()->create([
             'role' => $validated['role'],
             'token' => Invitation::hashToken($token),
             'label' => $validated['label'] ?? null,
@@ -77,6 +83,8 @@ class InvitationController extends Controller
             'max_uses' => $validated['max_uses'] ?? null,
             'created_by' => $request->user()->id,
         ]);
+
+        InvitationCreated::dispatch($invitation);
 
         return redirect()
             ->route('tenants.invitations.create', $tenant)
@@ -90,7 +98,11 @@ class InvitationController extends Controller
     {
         $this->authorize('delete', $invitation);
 
+        InvitationRevoking::dispatch($invitation);
+
         $invitation->update(['revoked_at' => now()]);
+
+        InvitationRevoked::dispatch($invitation);
 
         return redirect()->route('tenants.invitations.index', $tenant);
     }

@@ -2,6 +2,8 @@
 
 namespace DoITs\EasyAuth\Http\Controllers;
 
+use DoITs\EasyAuth\Events\InvitationRedeemed;
+use DoITs\EasyAuth\Events\InvitationRedeeming;
 use DoITs\EasyAuth\Models\Invitation;
 use DoITs\EasyAuth\Models\Tenant;
 use Illuminate\Contracts\View\View;
@@ -71,7 +73,11 @@ class InvitationRedemptionController extends Controller
             ]);
         }
 
+        InvitationRedeeming::dispatch($invitation, $user);
+
         $invitation->redeemFor($user);
+
+        InvitationRedeemed::dispatch($invitation, $user);
 
         if ($invitation->is_backup_code) {
             return redirect()->route('tenants.backup-code.show', $invitation->tenant);

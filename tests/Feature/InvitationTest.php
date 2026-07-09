@@ -1,8 +1,15 @@
 <?php
 
+use DoITs\EasyAuth\Events\InvitationCreated;
+use DoITs\EasyAuth\Events\InvitationCreating;
+use DoITs\EasyAuth\Events\InvitationRedeemed;
+use DoITs\EasyAuth\Events\InvitationRedeeming;
+use DoITs\EasyAuth\Events\InvitationRevoked;
+use DoITs\EasyAuth\Events\InvitationRevoking;
 use DoITs\EasyAuth\Models\Invitation;
 use DoITs\EasyAuth\Models\Tenant;
 use DoITs\EasyAuth\Tests\Fixtures\User;
+use Illuminate\Support\Facades\Event;
 
 function attachTenantMember(Tenant $tenant, User $user, string $role): void
 {
@@ -364,4 +371,157 @@ test('non admin cannot update tenant settings', function () {
     $response = $this->actingAs($member)->get(route('tenants.edit', $tenant));
 
     $response->assertForbidden();
+});
+
+test('creating an invitation dispatches InvitationCreating and InvitationCreated', function () {
+    Event::fake([InvitationCreating::class, InvitationCreated::class]);
+    $admin = User::factory()->create();
+    $tenant = Tenant::factory()->create();
+    attachTenantMember($tenant, $admin, Tenant::ADMIN_ROLE);
+
+    $this->actingAs($admin)->post(route('tenants.invitations.store', $tenant), [
+        'role' => Tenant::MEMBER_ROLE,
+    ]);
+
+    Event::assertDispatched(InvitationCreating::class, fn ($event) => $event->tenant->is($tenant) && $event->user->is($admin) && $event->validated['role'] === Tenant::MEMBER_ROLE);
+    Event::assertDispatched(InvitationCreated::class, fn ($event) => $event->invitation->tenant_id === $tenant->id);
+});
+
+test('revoking an invitation dispatches InvitationRevoking and InvitationRevoked', function () {
+    Event::fake([InvitationRevoking::class, InvitationRevoked::class]);
+    $admin = User::factory()->create();
+    $tenant = Tenant::factory()->create();
+    attachTenantMember($tenant, $admin, Tenant::ADMIN_ROLE);
+    $invitation = Invitation::factory()->for($tenant)->create();
+
+    $this->actingAs($admin)->delete(route('tenants.invitations.destroy', [$tenant, $invitation]));
+
+    Event::assertDispatched(InvitationRevoking::class, fn ($event) => $event->invitation->is($invitation));
+    Event::assertDispatched(InvitationRevoked::class, fn ($event) => $event->invitation->is($invitation));
+});
+
+test('redeeming an invitation dispatches InvitationRedeeming and InvitationRedeemed', function () {
+    Event::fake([InvitationRedeeming::class, InvitationRedeemed::class]);
+    $user = User::factory()->create();
+    $tenant = Tenant::factory()->create();
+    $token = Invitation::generateToken();
+    $invitation = Invitation::factory()->for($tenant)->create(['token' => Invitation::hashToken($token)]);
+
+    $this->actingAs($user)->post(route('invitations.redeem', $token));
+
+    Event::assertDispatched(InvitationRedeeming::class, fn ($event) => $event->invitation->is($invitation) && $event->user->is($user));
+    Event::assertDispatched(InvitationRedeemed::class, fn ($event) => $event->invitation->is($invitation) && $event->user->is($user));
+});
+
+test('an already admin redeem attempt does not dispatch InvitationRedeeming', function () {
+    Event::fake([InvitationRedeeming::class, InvitationRedeemed::class]);
+    $admin = User::factory()->create();
+    $tenant = Tenant::factory()->create();
+    attachTenantMember($tenant, $admin, Tenant::ADMIN_ROLE);
+    $token = Invitation::generateToken();
+    Invitation::factory()->for($tenant)->create(['token' => Invitation::hashToken($token)]);
+
+    $this->actingAs($admin)->post(route('invitations.redeem', $token));
+
+    Event::assertNotDispatched(InvitationRedeeming::class);
+    Event::assertNotDispatched(InvitationRedeemed::class);
+});
+
+test('redeem-panel renders the invalid branch verbatim', function () {
+    $token = Invitation::generateToken();
+    $tenant = Tenant::factory()->create();
+    Invitation::factory()->for($tenant)->used()->create(['token' => Invitation::hashToken($token)]);
+
+    $response = $this->get(route('invitations.show', $token));
+
+    $response->assertSee(__('easy-auth::invitations.invalid'));
+});
+
+test('redeem-panel renders the already_admin branch verbatim', function () {
+    $admin = User::factory()->create();
+    $tenant = Tenant::factory()->create(['name' => 'Acme']);
+    attachTenantMember($tenant, $admin, Tenant::ADMIN_ROLE);
+    $token = Invitation::generateToken();
+    Invitation::factory()->for($tenant)->create(['token' => Invitation::hashToken($token)]);
+
+    $response = $this->actingAs($admin)->get(route('invitations.show', $token));
+
+    $response->assertSee(__('easy-auth::invitations.already_admin', ['tenant' => 'Acme']));
+});
+
+test('redeem-panel renders the already-member promotion branch verbatim', function () {
+    $member = User::factory()->create();
+    $tenant = Tenant::factory()->create(['name' => 'Acme']);
+    attachTenantMember($tenant, $member, Tenant::MEMBER_ROLE);
+    $token = Invitation::generateToken();
+    Invitation::factory()->for($tenant)->admin()->create(['token' => Invitation::hashToken($token)]);
+
+    $response = $this->actingAs($member)->get(route('invitations.show', $token));
+
+    $response->assertSee(__('easy-auth::invitations.promote_confirm', ['tenant' => 'Acme']));
+    $response->assertSee(__('easy-auth::invitations.promote_button'));
+});
+
+test('redeem-panel renders the already-member refresh branch verbatim', function () {
+    $member = User::factory()->create();
+    $tenant = Tenant::factory()->create(['name' => 'Acme']);
+    attachTenantMember($tenant, $member, Tenant::MEMBER_ROLE);
+    $token = Invitation::generateToken();
+    Invitation::factory()->for($tenant)->create(['token' => Invitation::hashToken($token)]);
+
+    $response = $this->actingAs($member)->get(route('invitations.show', $token));
+
+    $response->assertSee(__('easy-auth::invitations.refresh_confirm', ['tenant' => 'Acme']));
+    $response->assertSee(__('easy-auth::invitations.refresh_button'));
+});
+
+test('redeem-panel renders the normal join branch verbatim', function () {
+    $user = User::factory()->create();
+    $tenant = Tenant::factory()->create(['name' => 'Acme']);
+    $token = Invitation::generateToken();
+    Invitation::factory()->for($tenant)->create(['token' => Invitation::hashToken($token)]);
+
+    $response = $this->actingAs($user)->get(route('invitations.show', $token));
+
+    $response->assertSee(__('easy-auth::invitations.join_prompt', ['tenant' => 'Acme', 'role' => __('easy-auth::invitations.role_member')]));
+    $response->assertSee(__('easy-auth::invitations.join_button'));
+});
+
+test('invitation create-form renders the copy-to-clipboard-button component when a URL was just issued', function () {
+    $admin = User::factory()->create();
+    $tenant = Tenant::factory()->create();
+    attachTenantMember($tenant, $admin, Tenant::ADMIN_ROLE);
+
+    $this->actingAs($admin)->post(route('tenants.invitations.store', $tenant), [
+        'role' => Tenant::MEMBER_ROLE,
+    ]);
+
+    $response = $this->actingAs($admin)->get(route('tenants.invitations.create', $tenant));
+
+    $response->assertOk();
+    $response->assertSee('js-copy-to-clipboard-button', false);
+});
+
+test('an app can extend an invitation row with the invitation-row-actions include-if slot', function () {
+    $admin = User::factory()->create();
+    $tenant = Tenant::factory()->create();
+    attachTenantMember($tenant, $admin, Tenant::ADMIN_ROLE);
+    $invitation = Invitation::factory()->for($tenant)->create();
+
+    $this->app['view']->addLocation(__DIR__.'/../Fixtures/optional-views');
+
+    $response = $this->actingAs($admin)->get(route('tenants.invitations.index', $tenant));
+
+    $response->assertSee("extra-actions-for-invitation-{$invitation->id}", false);
+});
+
+test('the invitation-row-actions slot renders nothing when the app has not published one', function () {
+    $admin = User::factory()->create();
+    $tenant = Tenant::factory()->create();
+    attachTenantMember($tenant, $admin, Tenant::ADMIN_ROLE);
+    Invitation::factory()->for($tenant)->create();
+
+    $response = $this->actingAs($admin)->get(route('tenants.invitations.index', $tenant));
+
+    $response->assertDontSee('extra-actions-for-invitation-', false);
 });

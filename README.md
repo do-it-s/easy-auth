@@ -208,9 +208,50 @@ const { device_uuid, auth_method } = getDeviceCredentials();
 
 これはLaravelの新規プロジェクト雛形に含まれることがあるが、`routes/api.php`を持たないアプリではAPIルートを一切JSON化できないだけの制約になっている。easy-auth導入時はこのコールバックを削除する(空の`withExceptions`に戻す)か、`$request->is('api/*') || $request->expectsJson()`に書き換えること。
 
+## ビューのカスタマイズ
+
+easy-authが提供するビューは、アプリが何も用意しなくても認証フロー一式が動く(デフォルト完結)ことを保証しつつ、以下の4つの手段でアプリ側からカスタマイズできる。
+
+### 1. ページ全体・コンポーネント単位の差し替え(`vendor:publish`)
+
+```
+php artisan vendor:publish --tag=easy-auth-views
+```
+
+`resources/views/vendor/easy-auth/`にビュー一式がコピーされ、以後はコピーされたファイルが優先して使われる(Laravel標準のビュー名前空間解決)。`resources/views/`配下は「1画面=1ページ」(例: `auth/sign-in.blade.php`)と、実際のフォーム等を持つ「機能コンポーネント」(`resources/views/components/`配下、例: `components/auth/sign-in-form.blade.php`)の2層構造になっている。ページの見た目だけを変えたいならページ側だけをコピーして`<x-easy-auth::auth.sign-in-form />`は元のコンポーネントのまま使い続けることもできるし、コンポーネント自体を丸ごと差し替えることもできる。
+
+### 2. 既存フォームへの項目追加(`@stack`)
+
+主要なフォームコンポーネントには、submitボタン直前に`@stack('easy-auth::components.{domain}.{name}.after-fields')`という差し込みポイントがある(例: `tenants/edit`フォームなら`easy-auth::components.tenants.edit-form.after-fields`)。アプリ側は任意のビューから`@push`するだけで、ページをコピーせずに項目を追加できる。
+
+```blade
+@push('easy-auth::components.tenants.edit-form.after-fields')
+    <label class="flex items-center gap-2 mb-4 text-sm">
+        <input type="checkbox" name="my_app_flag" value="1">
+        独自の設定項目
+    </label>
+@endpush
+```
+
+一覧系ビュー(`tenants/members/index`, `tenants/invitations/index`)の各行には、`@stack`ではなく`@includeIf('vendor.easy-auth.tenants.member-row-actions', [...])`のようなループ対応の差し込みポイントがある。デフォルトでは何も描画されず、アプリ側が`resources/views/vendor/easy-auth/tenants/member-row-actions.blade.php`(渡される変数はコンポーネントごとに異なる。各コンポーネントのソースを参照)を作成すると、行ごとに独自のボタン等を追加できる。
+
+### 3. 変更操作前後のフック(Laravel Event)
+
+テナント更新・招待作成・メンバー削除等の主要な変更操作は、前後に`DoITs\EasyAuth\Events\`配下のイベントを発火する(例: `TenantUpdating`/`TenantUpdated`, `InvitationCreating`/`InvitationCreated`)。`*ing`系イベントは検証済み配列ではなく生の`Request`(または元データ)を保持しているため、リスナー側で自分のフィールドを読み取り、`fillable`に含まれないカラムでも直接代入で保存できる。
+
+```php
+Event::listen(TenantUpdating::class, function (TenantUpdating $event): void {
+    $event->tenant->my_app_column = $event->request->boolean('my_app_column');
+    $event->tenant->save();
+});
+```
+
+### 4. 機能コンポーネントの組み替え
+
+`resources/views/components/`配下のコンポーネントは、パッケージ側のデフォルトページでの組み合わせ方に縛られない自己完結設計になっている。例えば`profile/create`はパスキー登録(`passkey-registration-form`)とパスワード登録フォールバック(`password-registration-form`)を独立したコンポーネントとして提供しているため、アプリ側は両者を同一画面に並べる・別ルートに分ける・片方だけ使う、といった構成を自由に選べる。
+
 ## 既知の制限・将来の検討事項
 
-- パッケージ提供のビュー・コントローラのアプリ側カスタマイズ手段(丸ごと差し替え・スロット差し込み・変更操作前後のLaravel Event)を拡充中。詳細な設計・進捗は`dev-docs/package-boundary/00-plan.md`を参照。
 - `EnsureProfileIsComplete`ミドルウェアは`$user->name === ''`のみでプロフィール完了を判定する。アプリが独自の必須プロフィール項目(電話番号等)を追加しても、このミドルウェアは関知せず素通りしてしまう。
 - パスキー登録時のWebAuthnオプション(`userVerification`・`residentKey`)は`laravel/passkeys`のデフォルト値(いずれも`required`)に委ねており、easy-auth側で上書きする設定項目は無い。
 - 登録時にAuthenticatorのBE(Backup Eligible)フラグを確認し、クラウド同期可能なパスキー(iCloudキーチェーン等で複数デバイスに同期されるもの)の登録を拒否する機能を`DoITs\EasyAuth\Actions\RejectSyncedPasskey`として用意している。デバイスUUID束縛は「招待されたデバイスである」ことの証明であり、同期パスキーはこの保証を(招待redeem時に組織外のデバイスでも人の正当性チェックを通過できてしまう形で)弱め得る。しかしこの拒否を有効にすると、ブラウザのパスワードマネージャー拡張機能(1Password等)がOS側のパスキー選択ダイアログからプラットフォーム認証器(Windows Hello等)を実質排除してしまう環境で、デバイス専用パスキーを新規作成する手段が無くなり、登録自体が不可能になるケースが実機で確認された。かんたん認証はメール/パスワードへのフォールバックを意図的に持たない設計のため、この詰みは「組織境界が同期パスキー分だけ弱まる」リスクより重いと判断し、`config('easy-auth.reject_backup_eligible_passkeys')`(`.env`の`EASY_AUTH_REJECT_BACKUP_ELIGIBLE_PASSKEYS`)でデフォルトoffにしている。サービス単位でoffからonに切り替える設定は用意した(`php artisan vendor:publish --tag=easy-auth-config`または`.env`で上書き)。
