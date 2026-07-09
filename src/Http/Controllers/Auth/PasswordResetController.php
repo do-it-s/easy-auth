@@ -2,6 +2,8 @@
 
 namespace DoITs\EasyAuth\Http\Controllers\Auth;
 
+use DoITs\EasyAuth\Events\PasswordResetCompleted;
+use DoITs\EasyAuth\Events\PasswordResetting;
 use DoITs\EasyAuth\Http\Controllers\Controller;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\RedirectResponse;
@@ -70,7 +72,11 @@ class PasswordResetController extends Controller
         ], trans('easy-auth::validation'));
 
         $status = Password::reset($validated, function ($user, $password) {
+            PasswordResetting::dispatch($user, $password);
+
             $user->forceFill(['password' => $password])->save();
+
+            PasswordResetCompleted::dispatch($user);
         });
 
         if ($status !== Password::PASSWORD_RESET) {

@@ -1,9 +1,30 @@
 <?php
 
+use DoITs\EasyAuth\Events\PasswordResetCompleted;
+use DoITs\EasyAuth\Events\PasswordResetting;
 use DoITs\EasyAuth\Tests\Fixtures\User;
 use Illuminate\Auth\Notifications\ResetPassword;
+use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Str;
+
+test('the password request page renders the password-request-form component with its expected elements', function () {
+    $response = $this->get('/password/request');
+
+    $response->assertOk();
+    $response->assertSee('id="email"', false);
+    $response->assertSee(route('password.email'), false);
+});
+
+test('the password reset page renders the password-reset-form component with its expected elements', function () {
+    $response = $this->get('/password/reset/some-token');
+
+    $response->assertOk();
+    $response->assertSee('id="email"', false);
+    $response->assertSee('id="password"', false);
+    $response->assertSee('id="password_confirmation"', false);
+    $response->assertSee('value="some-token"', false);
+});
 
 test('requesting a reset link for a fallback user sends a notification with a generic response', function () {
     Notification::fake();
@@ -32,6 +53,31 @@ test('requesting a reset link for an unknown email returns the same response', f
 
     $response->assertSessionHas('status', __('easy-auth::password_reset.link_sent'));
     Notification::assertNothingSent();
+});
+
+test('completing a reset dispatches PasswordResetting and PasswordResetCompleted', function () {
+    Notification::fake();
+    Event::fake([PasswordResetting::class, PasswordResetCompleted::class]);
+    $user = User::factory()->create(['email' => 'taro@example.com', 'password' => 'old-password']);
+
+    $this->post('/password/email', ['email' => 'taro@example.com']);
+
+    $token = null;
+    Notification::assertSentTo($user, ResetPassword::class, function ($notification) use (&$token) {
+        $token = $notification->token;
+
+        return true;
+    });
+
+    $this->post('/password/reset', [
+        'token' => $token,
+        'email' => 'taro@example.com',
+        'password' => 'new-password',
+        'password_confirmation' => 'new-password',
+    ]);
+
+    Event::assertDispatched(PasswordResetting::class, fn ($event) => $event->user->is($user) && $event->password === 'new-password');
+    Event::assertDispatched(PasswordResetCompleted::class, fn ($event) => $event->user->is($user));
 });
 
 test('completing a reset updates the password without authenticating, and the device check still applies afterward', function () {

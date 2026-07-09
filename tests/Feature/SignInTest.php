@@ -93,6 +93,17 @@ test('the sign-in page renders its strings with the shared data attribute, not t
     $response->assertDontSee('id="easy-auth-strings"', false);
 });
 
+test('the sign-in page renders the sign-in-form component with its expected elements', function () {
+    $response = $this->get('/login');
+
+    $response->assertOk();
+    $response->assertSee('id="sign-in-form"', false);
+    $response->assertSee('id="sign-in-status"', false);
+    $response->assertSee('id="email"', false);
+    $response->assertSee('id="password"', false);
+    $response->assertSee(route('password.request'), false);
+});
+
 test('authenticated users are redirected away from the sign-in page', function () {
     $user = User::factory()->create();
 

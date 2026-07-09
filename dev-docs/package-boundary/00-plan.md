@@ -32,6 +32,7 @@ easy-authが提供するビューは以下の2点を満たす必要がある。
 - **差し込みスロット命名**: `easy-auth::components.{domain}.{name}.{slot}`
   例: `easy-auth::components.tenants.edit-form.after-fields`
 - **イベント命名**: `DoITs\EasyAuth\Events\{Model}{Verb}ing` / `{Model}{Verb}ed`(例: `TenantUpdating`/`TenantUpdated`)。Laravel組み込みの`Illuminate\Auth\Events\Registered`等と衝突しない名前にすること。
+  - **セッションAでの補足(承認済みの逸脱)**: 動詞の現在分詞・過去分詞が同形になり紛らわしい場合(例: 「reset」)、または対象がEloquentモデル名と1対1で対応しない意味的な単位の場合(例: 「Account」削除、実体は`User`モデルだが概念としては「アカウント削除」)は、型を厳密に適用せず`PasswordResetting`/`PasswordResetCompleted`、`AccountDeleting`/`AccountDeleted`のように意味が明確な名前を優先してよい。Laravel組み込みイベントとの衝突回避が目的の場合は特に、命名の逸脱理由をコメントか報告書に残すこと。
 - **publishタグ**: 既存の`easy-auth-config`に倣い、`easy-auth-views`という単一タグで`resources/views`ツリー全体を`views/vendor/easy-auth`へ公開する(ページ単位・コンポーネント単位で別タグに分けない)。
 
 ## 追加の設計判断(全ビュー調査後に確定)

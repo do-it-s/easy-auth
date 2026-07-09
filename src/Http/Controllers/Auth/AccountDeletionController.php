@@ -2,6 +2,8 @@
 
 namespace DoITs\EasyAuth\Http\Controllers\Auth;
 
+use DoITs\EasyAuth\Events\AccountDeleted;
+use DoITs\EasyAuth\Events\AccountDeleting;
 use DoITs\EasyAuth\Http\Controllers\Controller;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\RedirectResponse;
@@ -56,7 +58,11 @@ class AccountDeletionController extends Controller
             return back()->withErrors(['name' => __('easy-auth::account_deletion.name_mismatch')]);
         }
 
+        AccountDeleting::dispatch($user);
+
         $user->delete();
+
+        AccountDeleted::dispatch($user);
 
         return redirect()->route('account-deletion.deleted');
     }
