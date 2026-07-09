@@ -2,6 +2,8 @@
 
 namespace DoITs\EasyAuth\Http\Controllers;
 
+use DoITs\EasyAuth\Events\TenantMemberRemoved;
+use DoITs\EasyAuth\Events\TenantMemberRemoving;
 use DoITs\EasyAuth\Models\Tenant;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\RedirectResponse;
@@ -39,7 +41,11 @@ class TenantLeaveController extends Controller
             return back()->withErrors(['tenant_name' => __('easy-auth::members.name_mismatch')]);
         }
 
+        TenantMemberRemoving::dispatch($tenant, $user);
+
         $tenant->users()->detach($user);
+
+        TenantMemberRemoved::dispatch($tenant, $user);
 
         return redirect()->route('home');
     }

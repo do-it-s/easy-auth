@@ -1,8 +1,11 @@
 <?php
 
+use DoITs\EasyAuth\Events\BackupCodeIssued;
+use DoITs\EasyAuth\Events\BackupCodeIssuing;
 use DoITs\EasyAuth\Models\Invitation;
 use DoITs\EasyAuth\Models\Tenant;
 use DoITs\EasyAuth\Tests\Fixtures\User;
+use Illuminate\Support\Facades\Event;
 
 function attachAdmin(Tenant $tenant, User $user): void
 {
@@ -46,6 +49,31 @@ test('admin can issue a backup code', function () {
 
     $rawToken = basename((string) session('invitation_url'));
     expect(Invitation::hashToken($rawToken))->toBe($backupCode->token);
+});
+
+test('the backup code panel renders the copy-to-clipboard-button component when a code was just issued', function () {
+    $admin = User::factory()->create();
+    $tenant = Tenant::factory()->create();
+    attachAdmin($tenant, $admin);
+
+    $this->actingAs($admin)->post(route('tenants.backup-code.store', $tenant));
+
+    $response = $this->actingAs($admin)->get(route('tenants.backup-code.show', $tenant));
+
+    $response->assertOk();
+    $response->assertSee('js-copy-to-clipboard-button', false);
+});
+
+test('issuing a backup code dispatches BackupCodeIssuing and BackupCodeIssued', function () {
+    Event::fake([BackupCodeIssuing::class, BackupCodeIssued::class]);
+    $admin = User::factory()->create();
+    $tenant = Tenant::factory()->create();
+    attachAdmin($tenant, $admin);
+
+    $this->actingAs($admin)->post(route('tenants.backup-code.store', $tenant));
+
+    Event::assertDispatched(BackupCodeIssuing::class, fn ($event) => $event->tenant->is($tenant));
+    Event::assertDispatched(BackupCodeIssued::class, fn ($event) => $event->tenant->is($tenant) && $event->invitation->tenant_id === $tenant->id);
 });
 
 test('reissuing a backup code invalidates the previous one', function () {

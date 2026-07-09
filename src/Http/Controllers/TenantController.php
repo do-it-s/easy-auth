@@ -2,6 +2,12 @@
 
 namespace DoITs\EasyAuth\Http\Controllers;
 
+use DoITs\EasyAuth\Events\TenantCreated;
+use DoITs\EasyAuth\Events\TenantCreating;
+use DoITs\EasyAuth\Events\TenantDeleted;
+use DoITs\EasyAuth\Events\TenantDeleting;
+use DoITs\EasyAuth\Events\TenantUpdated;
+use DoITs\EasyAuth\Events\TenantUpdating;
 use DoITs\EasyAuth\Models\Tenant;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\RedirectResponse;
@@ -34,12 +40,18 @@ class TenantController extends Controller
             'tenant_name' => ['required', 'string', 'max:255'],
         ], trans('easy-auth::validation'));
 
+        $user = $request->user();
+
+        TenantCreating::dispatch($user, $validated);
+
         $tenant = Tenant::create(['name' => $validated['tenant_name']]);
 
-        $tenant->users()->attach($request->user(), [
+        $tenant->users()->attach($user, [
             'role' => Tenant::ADMIN_ROLE,
             'last_accessed_at' => now(),
         ]);
+
+        TenantCreated::dispatch($tenant, $user);
 
         return redirect()->route('tenants.backup-code.show', $tenant);
     }
@@ -80,10 +92,14 @@ class TenantController extends Controller
             'member_invites_enabled' => ['nullable', 'boolean'],
         ], trans('easy-auth::validation'));
 
+        TenantUpdating::dispatch($tenant, $request);
+
         $tenant->update([
             'name' => $validated['tenant_name'],
             'member_invites_enabled' => $request->boolean('member_invites_enabled'),
         ]);
+
+        TenantUpdated::dispatch($tenant);
 
         return redirect()->route('tenants.edit', $tenant);
     }
@@ -104,7 +120,11 @@ class TenantController extends Controller
             return back()->withErrors(['tenant_name' => __('easy-auth::members.name_mismatch')]);
         }
 
+        TenantDeleting::dispatch($tenant);
+
         $tenant->delete();
+
+        TenantDeleted::dispatch($tenant);
 
         return redirect()->route('home');
     }

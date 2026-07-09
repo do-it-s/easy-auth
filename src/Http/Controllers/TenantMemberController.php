@@ -3,6 +3,10 @@
 namespace DoITs\EasyAuth\Http\Controllers;
 
 use DoITs\EasyAuth\Contracts\EasyAuthUser;
+use DoITs\EasyAuth\Events\TenantMemberRemoved;
+use DoITs\EasyAuth\Events\TenantMemberRemoving;
+use DoITs\EasyAuth\Events\TenantMemberRoleUpdated;
+use DoITs\EasyAuth\Events\TenantMemberRoleUpdating;
 use DoITs\EasyAuth\Models\Tenant;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\RedirectResponse;
@@ -51,7 +55,11 @@ class TenantMemberController extends Controller
             }
         }
 
+        TenantMemberRoleUpdating::dispatch($tenant, $user, $validated['role']);
+
         $tenant->users()->updateExistingPivot($user, ['role' => $validated['role']]);
+
+        TenantMemberRoleUpdated::dispatch($tenant, $user, $validated['role']);
 
         return redirect()->route('tenants.members.index', $tenant);
     }
@@ -72,7 +80,11 @@ class TenantMemberController extends Controller
             }
         }
 
+        TenantMemberRemoving::dispatch($tenant, $user);
+
         $tenant->users()->detach($user);
+
+        TenantMemberRemoved::dispatch($tenant, $user);
 
         return redirect()->route('tenants.members.index', $tenant);
     }

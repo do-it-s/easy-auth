@@ -2,6 +2,8 @@
 
 namespace DoITs\EasyAuth\Http\Controllers;
 
+use DoITs\EasyAuth\Events\BackupCodeIssued;
+use DoITs\EasyAuth\Events\BackupCodeIssuing;
 use DoITs\EasyAuth\Models\Invitation;
 use DoITs\EasyAuth\Models\Tenant;
 use Endroid\QrCode\Builder\Builder;
@@ -42,9 +44,11 @@ class BackupCodeController extends Controller
             ->whereNull('used_at')
             ->update(['used_at' => now()]);
 
+        BackupCodeIssuing::dispatch($tenant);
+
         $token = Invitation::generateToken();
 
-        $tenant->invitations()->create([
+        $invitation = $tenant->invitations()->create([
             'role' => Tenant::ADMIN_ROLE,
             'token' => Invitation::hashToken($token),
             'label' => __('easy-auth::backup_code.emergency_label'),
@@ -52,6 +56,8 @@ class BackupCodeController extends Controller
             'is_backup_code' => true,
             'created_by' => $request->user()->id,
         ]);
+
+        BackupCodeIssued::dispatch($tenant, $invitation);
 
         return redirect()
             ->route('tenants.backup-code.show', $tenant)

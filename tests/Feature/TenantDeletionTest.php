@@ -1,8 +1,11 @@
 <?php
 
+use DoITs\EasyAuth\Events\TenantDeleted;
+use DoITs\EasyAuth\Events\TenantDeleting;
 use DoITs\EasyAuth\Models\Invitation;
 use DoITs\EasyAuth\Models\Tenant;
 use DoITs\EasyAuth\Tests\Fixtures\User;
+use Illuminate\Support\Facades\Event;
 
 test('delete confirmation page is shown to an admin', function () {
     $admin = User::factory()->create(['name' => 'Admin']);
@@ -102,6 +105,20 @@ test('a member cannot delete the tenant', function () {
 
     $response->assertForbidden();
     $this->assertDatabaseHas('tenants', ['id' => $tenant->id]);
+});
+
+test('deleting a tenant dispatches TenantDeleting and TenantDeleted', function () {
+    Event::fake([TenantDeleting::class, TenantDeleted::class]);
+    $admin = User::factory()->create(['name' => 'Admin']);
+    $tenant = Tenant::factory()->create(['name' => 'Current Tenant']);
+    $tenant->users()->attach($admin, ['role' => Tenant::ADMIN_ROLE, 'last_accessed_at' => now()]);
+
+    $this->actingAs($admin)->delete(route('tenants.delete', $tenant), [
+        'tenant_name' => 'Current Tenant',
+    ]);
+
+    Event::assertDispatched(TenantDeleting::class, fn ($event) => $event->tenant->is($tenant));
+    Event::assertDispatched(TenantDeleted::class, fn ($event) => $event->tenant->is($tenant));
 });
 
 test('a non-member cannot delete the tenant', function () {

@@ -1,7 +1,12 @@
 <?php
 
+use DoITs\EasyAuth\Events\TenantMemberRemoved;
+use DoITs\EasyAuth\Events\TenantMemberRemoving;
+use DoITs\EasyAuth\Events\TenantMemberRoleUpdated;
+use DoITs\EasyAuth\Events\TenantMemberRoleUpdating;
 use DoITs\EasyAuth\Models\Tenant;
 use DoITs\EasyAuth\Tests\Fixtures\User;
+use Illuminate\Support\Facades\Event;
 
 test('admin can view the member list', function () {
     $admin = User::factory()->create(['name' => 'Admin']);
@@ -44,6 +49,56 @@ test('member list shows admins in the first section and others in the second', f
     $response = $this->actingAs($admin)->get(route('tenants.members.index', $tenant));
 
     $response->assertSeeInOrder(['Hanako', 'Taro']);
+});
+
+test('member row shows promote and remove buttons for a member visible to an admin', function () {
+    $admin = User::factory()->create(['name' => 'Admin']);
+    $member = User::factory()->create(['name' => 'Taro']);
+    $tenant = Tenant::factory()->create();
+    $tenant->users()->attach($admin, ['role' => Tenant::ADMIN_ROLE, 'last_accessed_at' => now()]);
+    $tenant->users()->attach($member, ['role' => Tenant::MEMBER_ROLE, 'last_accessed_at' => now()]);
+
+    $response = $this->actingAs($admin)->get(route('tenants.members.index', $tenant));
+
+    $response->assertSee(__('easy-auth::members.promote'));
+    $response->assertSee(__('easy-auth::members.remove'));
+});
+
+test('member row hides management buttons for the sole admin viewing themselves', function () {
+    $admin = User::factory()->create(['name' => 'Admin']);
+    $tenant = Tenant::factory()->create();
+    $tenant->users()->attach($admin, ['role' => Tenant::ADMIN_ROLE, 'last_accessed_at' => now()]);
+
+    $response = $this->actingAs($admin)->get(route('tenants.members.index', $tenant));
+
+    $response->assertDontSee(__('easy-auth::members.demote'));
+    $response->assertDontSee(__('easy-auth::members.remove'));
+});
+
+test('an app can extend a member row with the member-row-actions include-if slot', function () {
+    $admin = User::factory()->create(['name' => 'Admin']);
+    $member = User::factory()->create(['name' => 'Taro']);
+    $tenant = Tenant::factory()->create();
+    $tenant->users()->attach($admin, ['role' => Tenant::ADMIN_ROLE, 'last_accessed_at' => now()]);
+    $tenant->users()->attach($member, ['role' => Tenant::MEMBER_ROLE, 'last_accessed_at' => now()]);
+
+    $this->app['view']->addLocation(__DIR__.'/../Fixtures/optional-views');
+
+    $response = $this->actingAs($admin)->get(route('tenants.members.index', $tenant));
+
+    $response->assertSee("extra-actions-for-{$member->id}-member", false);
+});
+
+test('the member-row-actions slot renders nothing when the app has not published one', function () {
+    $admin = User::factory()->create(['name' => 'Admin']);
+    $member = User::factory()->create(['name' => 'Taro']);
+    $tenant = Tenant::factory()->create();
+    $tenant->users()->attach($admin, ['role' => Tenant::ADMIN_ROLE, 'last_accessed_at' => now()]);
+    $tenant->users()->attach($member, ['role' => Tenant::MEMBER_ROLE, 'last_accessed_at' => now()]);
+
+    $response = $this->actingAs($admin)->get(route('tenants.members.index', $tenant));
+
+    $response->assertDontSee('extra-actions-for-', false);
 });
 
 test('admin can promote a member to admin', function () {
@@ -103,6 +158,22 @@ test('cannot demote the last admin', function () {
     ])->assertForbidden();
 
     expect($tenant->users()->wherePivot('user_id', $admin->id)->first()->pivot->role)->toBe(Tenant::ADMIN_ROLE);
+});
+
+test('promoting a member dispatches TenantMemberRoleUpdating and TenantMemberRoleUpdated', function () {
+    Event::fake([TenantMemberRoleUpdating::class, TenantMemberRoleUpdated::class]);
+    $admin = User::factory()->create();
+    $member = User::factory()->create();
+    $tenant = Tenant::factory()->create();
+    $tenant->users()->attach($admin, ['role' => Tenant::ADMIN_ROLE, 'last_accessed_at' => now()]);
+    $tenant->users()->attach($member, ['role' => Tenant::MEMBER_ROLE, 'last_accessed_at' => now()]);
+
+    $this->actingAs($admin)->patch(route('tenants.members.update', [$tenant, $member]), [
+        'role' => Tenant::ADMIN_ROLE,
+    ]);
+
+    Event::assertDispatched(TenantMemberRoleUpdating::class, fn ($event) => $event->tenant->is($tenant) && $event->member->is($member) && $event->role === Tenant::ADMIN_ROLE);
+    Event::assertDispatched(TenantMemberRoleUpdated::class, fn ($event) => $event->tenant->is($tenant) && $event->member->is($member) && $event->role === Tenant::ADMIN_ROLE);
 });
 
 test('member cannot change roles', function () {
@@ -175,6 +246,20 @@ test('cannot remove the last admin', function () {
         ->assertForbidden();
 
     expect($tenant->hasMember($admin))->toBeTrue();
+});
+
+test('removing a member dispatches TenantMemberRemoving and TenantMemberRemoved', function () {
+    Event::fake([TenantMemberRemoving::class, TenantMemberRemoved::class]);
+    $admin = User::factory()->create();
+    $member = User::factory()->create();
+    $tenant = Tenant::factory()->create();
+    $tenant->users()->attach($admin, ['role' => Tenant::ADMIN_ROLE, 'last_accessed_at' => now()]);
+    $tenant->users()->attach($member, ['role' => Tenant::MEMBER_ROLE, 'last_accessed_at' => now()]);
+
+    $this->actingAs($admin)->delete(route('tenants.members.destroy', [$tenant, $member]));
+
+    Event::assertDispatched(TenantMemberRemoving::class, fn ($event) => $event->tenant->is($tenant) && $event->member->is($member));
+    Event::assertDispatched(TenantMemberRemoved::class, fn ($event) => $event->tenant->is($tenant) && $event->member->is($member));
 });
 
 test('member cannot remove other members', function () {

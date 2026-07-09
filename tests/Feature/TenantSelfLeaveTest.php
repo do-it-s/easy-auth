@@ -1,7 +1,10 @@
 <?php
 
+use DoITs\EasyAuth\Events\TenantMemberRemoved;
+use DoITs\EasyAuth\Events\TenantMemberRemoving;
 use DoITs\EasyAuth\Models\Tenant;
 use DoITs\EasyAuth\Tests\Fixtures\User;
+use Illuminate\Support\Facades\Event;
 
 test('leave confirmation page is shown to a member', function () {
     $user = User::factory()->create(['name' => 'Member']);
@@ -45,6 +48,20 @@ test('member can leave the tenant when the typed tenant name matches', function 
 
     $response->assertRedirect(route('home'));
     expect($tenant->hasMember($user))->toBeFalse();
+});
+
+test('leaving a tenant dispatches TenantMemberRemoving and TenantMemberRemoved', function () {
+    Event::fake([TenantMemberRemoving::class, TenantMemberRemoved::class]);
+    $user = User::factory()->create(['name' => 'Member']);
+    $tenant = Tenant::factory()->create(['name' => 'Current Tenant']);
+    $tenant->users()->attach($user, ['role' => Tenant::MEMBER_ROLE, 'last_accessed_at' => now()]);
+
+    $this->actingAs($user)->delete(route('tenants.leave', $tenant), [
+        'tenant_name' => 'Current Tenant',
+    ]);
+
+    Event::assertDispatched(TenantMemberRemoving::class, fn ($event) => $event->tenant->is($tenant) && $event->member->is($user));
+    Event::assertDispatched(TenantMemberRemoved::class, fn ($event) => $event->tenant->is($tenant) && $event->member->is($user));
 });
 
 test('member cannot leave when the typed tenant name does not match', function () {
