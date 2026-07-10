@@ -28,6 +28,14 @@ easy-auth側が更新された後にその変更を取り込みたい場合は�
 composer update do-it-s/easy-auth
 ```
 
+この際`brick/math`に関する依存エラーで失敗する場合、それはeasy-auth自体の不備ではない。素の`laravel/laravel`プロジェクトは`brick/math`を`0.18.x`系に固定するが、`laravel/passkeys`→`web-auth/webauthn-lib`経由で引き込まれる`spomky-labs/cbor-php`は、最新タグの時点で`brick/math ^0.17`までしかサポートしておらず、Composerの通常の部分アップデートは無関係なパッケージへの波及を避けるためここで止まる。`-W`(`--with-all-dependencies`)を付けて再実行すれば、`brick/math`を`0.17.x`へダウングレードする形で安全に解決できる(`laravel/framework`自体が元々その範囲を許容しているため、他への影響はない):
+
+```
+composer require do-it-s/easy-auth -W
+```
+
+このギャップはcbor-php側の`brick/math ^0.18`対応(この文書執筆時点で対応作業が進行中)がタグ付けされ次第、解消される見込み。
+
 ### 2. `laravel/passkeys`のmigrationをpublish
 
 `laravel/passkeys`は`passkeys`テーブルのmigrationを自動ロードしない(`users.id`の型がホスト依存のため、アプリ側で編集できるようpublish方式を取っている)。
@@ -95,8 +103,6 @@ initEasyAuth();
 ```
 
 (Alpine.js等、アプリ自身のJS初期化はこの前後で好きに行ってよい。easy-auth-jsはAlpineに依存していない。)
-
-Windowsで`file:`依存がsymlink権限エラーになる場合は`.npmrc`に`install-links=true`を追加してコピーインストールに切り替えること。
 
 Windowsで`file:`依存がsymlink権限エラーになる場合は`.npmrc`に`install-links=true`を追加してコピーインストールに切り替えること。
 

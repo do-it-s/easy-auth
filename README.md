@@ -28,6 +28,14 @@ To pick up updates once easy-auth itself has been updated, run:
 composer update do-it-s/easy-auth
 ```
 
+If this fails with a dependency conflict mentioning `brick/math`, it's not a problem with easy-auth itself: a fresh `laravel/laravel` project locks `brick/math` to `0.18.x`, but `spomky-labs/cbor-php` (pulled in transitively via `laravel/passkeys` → `web-auth/webauthn-lib`) only allows `brick/math ^0.17` as of its latest tagged release, so Composer's default partial update refuses to touch it. Retrying with `-W` (`--with-all-dependencies`) resolves this safely by letting Composer downgrade `brick/math` to `0.17.x` — `laravel/framework` itself already allows that range, so nothing else breaks:
+
+```
+composer require do-it-s/easy-auth -W
+```
+
+This gap is expected to close once cbor-php's upstream support for `brick/math ^0.18` (already in progress as of this writing) is tagged and released.
+
 ### 2. Publish `laravel/passkeys` migrations
 
 `laravel/passkeys` does not auto-load the migration for the `passkeys` table (since the type of `users.id` depends on the host app, it uses a publish-based approach so the app can edit it).
