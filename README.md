@@ -248,6 +248,27 @@ Event::listen(TenantUpdating::class, function (TenantUpdating $event): void {
 });
 ```
 
+このパッケージが発火するイベントは以下の25個。`{Model}{Verb}ing`/`{Model}{Verb}ed`という命名はEloquentの`Creating`/`Created`系と同型で、全ての変更操作を一括で網羅している(実際にリスナーで使われている例は現状少ないが、将来アプリ側が任意の操作にフックできるよう先回りして揃えたもの)。
+
+| 契機 | 発火元 | `*ing`(検証前) | `*ed`(保存後) |
+| --- | --- | --- | --- |
+| 新規登録(パスワード) | `Auth\RegisterController` | - | `UserRegistered`(`context: 'password'`) |
+| 新規登録(パスキー) | `ProfileController` | - | `UserRegistered`(`context: 'passkey'`) |
+| プロフィール編集 | `ProfileController` | `ProfileUpdating` | `ProfileUpdated` |
+| アカウント削除(ログイン中の本人操作) | `ProfileController` | `AccountDeleting` | `AccountDeleted` |
+| アカウント削除(デバイス不一致からのセルフサービス退会) | `Auth\AccountDeletionController` | `AccountDeleting` | `AccountDeleted` |
+| パスワード再設定 | `Auth\PasswordResetController` | `PasswordResetting` | `PasswordResetCompleted` |
+| バックアップコード発行 | `BackupCodeController` | `BackupCodeIssuing` | `BackupCodeIssued` |
+| 招待作成 | `InvitationController` | `InvitationCreating` | `InvitationCreated` |
+| 招待失効 | `InvitationController` | `InvitationRevoking` | `InvitationRevoked` |
+| 招待redeem(参加) | `InvitationRedemptionController` | `InvitationRedeeming` | `InvitationRedeemed` |
+| 組織作成 | `TenantController` | `TenantCreating` | `TenantCreated` |
+| 組織編集 | `TenantController` | `TenantUpdating` | `TenantUpdated` |
+| 組織削除 | `TenantController` | `TenantDeleting` | `TenantDeleted` |
+| メンバー自己脱退 | `TenantLeaveController` | `TenantMemberRemoving` | `TenantMemberRemoved` |
+| メンバー削除(管理者操作) | `TenantMemberController` | `TenantMemberRemoving` | `TenantMemberRemoved` |
+| メンバーのロール変更 | `TenantMemberController` | `TenantMemberRoleUpdating` | `TenantMemberRoleUpdated` |
+
 ### 4. 機能コンポーネントの組み替え
 
 `resources/views/components/`配下のコンポーネントは、パッケージ側のデフォルトページでの組み合わせ方に縛られない自己完結設計になっている。例えば`profile/create`はパスキー登録(`passkey-registration-form`)とパスワード登録フォールバック(`password-registration-form`)を独立したコンポーネントとして提供しているため、アプリ側は両者を同一画面に並べる・別ルートに分ける・片方だけ使う、といった構成を自由に選べる。
