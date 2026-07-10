@@ -1,9 +1,7 @@
 <div class="w-full max-w-sm">
     <h1 class="mb-4 text-lg">{{ __('easy-auth::auth.sign_in_heading') }}</h1>
 
-    @if (session('status'))
-        <p class="mb-4 text-sm text-green-600">{{ session('status') }}</p>
-    @endif
+    <x-easy-auth::shared.status-message />
 
     <p id="sign-in-status" class="mb-4 text-sm text-red-600"></p>
 

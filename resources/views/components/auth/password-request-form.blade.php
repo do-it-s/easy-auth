@@ -3,9 +3,7 @@
 
     <p class="mb-4 text-sm">{{ __('easy-auth::password_reset.request_description') }}</p>
 
-    @if (session('status'))
-        <p class="mb-4 text-sm text-green-600">{{ session('status') }}</p>
-    @endif
+    <x-easy-auth::shared.status-message />
 
     <form method="POST" action="{{ route('password.email') }}">
         @csrf

@@ -3,9 +3,7 @@
 <div class="w-full max-w-sm">
     <h1 class="mb-4 text-lg">{{ __('easy-auth::profile.edit_heading') }}</h1>
 
-    @if (session('status'))
-        <p class="mb-4 text-sm text-green-600">{{ session('status') }}</p>
-    @endif
+    <x-easy-auth::shared.status-message />
 
     @error('name')
         <p class="mb-4 text-[#F53003] dark:text-[#FF4433]">{{ $message }}</p>

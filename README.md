@@ -220,6 +220,8 @@ php artisan vendor:publish --tag=easy-auth-views
 
 `resources/views/vendor/easy-auth/`にビュー一式がコピーされ、以後はコピーされたファイルが優先して使われる(Laravel標準のビュー名前空間解決)。`resources/views/`配下は「1画面=1ページ」(例: `auth/sign-in.blade.php`)と、実際のフォーム等を持つ「機能コンポーネント」(`resources/views/components/`配下、例: `components/auth/sign-in-form.blade.php`)の2層構造になっている。ページの見た目だけを変えたいならページ側だけをコピーして`<x-easy-auth::auth.sign-in-form />`は元のコンポーネントのまま使い続けることもできるし、コンポーネント自体を丸ごと差し替えることもできる。
 
+サインイン・パスワード再設定リンク送信・プロフィール編集・組織編集の各フォームが表示する成功時ステータス(`session('status')`の緑字メッセージ)は、フォーム全体とは別に`components/shared/status-message.blade.php`という小さな共有コンポーネントに切り出されている。アプリ側で(例えばトースト通知に一本化するなどの理由で)このメッセージだけを消したい場合、フォーム全体をコピーして編集する必要はなく、`resources/views/vendor/easy-auth/components/shared/status-message.blade.php`を空ファイルとして作成すれば済む。
+
 ### 2. 既存フォームへの項目追加(`@stack`)
 
 主要なフォームコンポーネントには、submitボタン直前に`@stack('easy-auth::components.{domain}.{name}.after-fields')`という差し込みポイントがある(例: `tenants/edit`フォームなら`easy-auth::components.tenants.edit-form.after-fields`)。アプリ側は任意のビューから`@push`するだけで、ページをコピーせずに項目を追加できる。
