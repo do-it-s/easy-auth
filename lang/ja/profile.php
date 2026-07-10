@@ -14,6 +14,7 @@ return [
     'register_with_password' => 'メールアドレスで登録する',
     'edit_heading' => 'プロフィールを入力',
     'save' => '保存',
+    'updated' => 'プロフィールを保存しました',
     'delete_heading' => 'アカウントを削除',
     'delete_description' => 'アカウントを完全に削除し、所属しているすべての組織から外れます。元に戻すことはできません。',
     'name_required' => '名前を入力してください',

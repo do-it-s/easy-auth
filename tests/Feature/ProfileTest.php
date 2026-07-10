@@ -95,6 +95,14 @@ test('updating the profile dispatches ProfileUpdating and ProfileUpdated', funct
     Event::assertDispatched(ProfileUpdated::class, fn ($event) => $event->user->is($user));
 });
 
+test('updating the profile flashes a status message', function () {
+    $user = User::factory()->create(['name' => 'Taro']);
+
+    $response = $this->actingAs($user)->patch('/profile', ['name' => 'Jiro']);
+
+    $response->assertSessionHas('status');
+});
+
 test('the registration page renders a dedicated status element for the password registration fallback', function () {
     $response = $this->get(route('profile.create'));
 

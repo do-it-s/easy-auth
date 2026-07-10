@@ -141,9 +141,10 @@ class ProfileController extends Controller
         // earlier visit. Only fall back to intended() for a plain signup
         // with no invitation in play, where returning the guest to whatever
         // protected page they originally tried to reach is the right call.
-        $redirect = $postRegistrationRedirect
+        $redirect = ($postRegistrationRedirect
             ? redirect($postRegistrationRedirect)
-            : redirect()->intended(route('home'));
+            : redirect()->intended(route('home')))
+            ->with('status', __('easy-auth::profile.updated'));
 
         if ($request->wantsJson()) {
             return response()->json([

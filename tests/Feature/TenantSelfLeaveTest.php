@@ -50,6 +50,19 @@ test('member can leave the tenant when the typed tenant name matches', function 
     expect($tenant->hasMember($user))->toBeFalse();
 });
 
+test('leaving a tenant flashes a status message naming the tenant', function () {
+    $user = User::factory()->create(['name' => 'Member']);
+    $tenant = Tenant::factory()->create(['name' => 'Current Tenant']);
+    $tenant->users()->attach($user, ['role' => Tenant::MEMBER_ROLE, 'last_accessed_at' => now()]);
+
+    $response = $this->actingAs($user)->delete(route('tenants.leave', $tenant), [
+        'tenant_name' => 'Current Tenant',
+    ]);
+
+    $response->assertRedirect(route('home'));
+    $response->assertSessionHas('status', __('easy-auth::tenants.left', ['tenant' => 'Current Tenant']));
+});
+
 test('leaving a tenant dispatches TenantMemberRemoving and TenantMemberRemoved', function () {
     Event::fake([TenantMemberRemoving::class, TenantMemberRemoved::class]);
     $user = User::factory()->create(['name' => 'Member']);

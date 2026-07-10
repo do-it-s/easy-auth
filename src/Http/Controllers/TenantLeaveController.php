@@ -47,6 +47,7 @@ class TenantLeaveController extends Controller
 
         TenantMemberRemoved::dispatch($tenant, $user);
 
-        return redirect()->route('home');
+        return redirect()->route('home')
+            ->with('status', __('easy-auth::tenants.left', ['tenant' => $tenant->name]));
     }
 }

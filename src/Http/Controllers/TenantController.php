@@ -101,7 +101,8 @@ class TenantController extends Controller
 
         TenantUpdated::dispatch($tenant);
 
-        return redirect()->route('tenants.edit', $tenant);
+        return redirect()->route('tenants.edit', $tenant)
+            ->with('status', __('easy-auth::tenants.updated'));
     }
 
     /**
@@ -120,12 +121,15 @@ class TenantController extends Controller
             return back()->withErrors(['tenant_name' => __('easy-auth::members.name_mismatch')]);
         }
 
+        $tenantName = $tenant->name;
+
         TenantDeleting::dispatch($tenant);
 
         $tenant->delete();
 
         TenantDeleted::dispatch($tenant);
 
-        return redirect()->route('home');
+        return redirect()->route('home')
+            ->with('status', __('easy-auth::tenants.deleted', ['tenant' => $tenantName]));
     }
 }

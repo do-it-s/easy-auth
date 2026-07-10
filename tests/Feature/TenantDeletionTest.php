@@ -121,6 +121,19 @@ test('deleting a tenant dispatches TenantDeleting and TenantDeleted', function (
     Event::assertDispatched(TenantDeleted::class, fn ($event) => $event->tenant->is($tenant));
 });
 
+test('deleting a tenant flashes a status message naming the tenant', function () {
+    $admin = User::factory()->create(['name' => 'Admin']);
+    $tenant = Tenant::factory()->create(['name' => 'Current Tenant']);
+    $tenant->users()->attach($admin, ['role' => Tenant::ADMIN_ROLE, 'last_accessed_at' => now()]);
+
+    $response = $this->actingAs($admin)->delete(route('tenants.delete', $tenant), [
+        'tenant_name' => 'Current Tenant',
+    ]);
+
+    $response->assertRedirect(route('home'));
+    $response->assertSessionHas('status', __('easy-auth::tenants.deleted', ['tenant' => 'Current Tenant']));
+});
+
 test('a non-member cannot delete the tenant', function () {
     $outsider = User::factory()->create(['name' => 'Outsider']);
     $tenant = Tenant::factory()->create(['name' => 'Current Tenant']);

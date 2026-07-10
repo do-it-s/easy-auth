@@ -45,3 +45,16 @@ test('updating a tenant dispatches TenantUpdating (with the raw request) and Ten
     });
     Event::assertDispatched(TenantUpdated::class, fn ($event) => $event->tenant->is($tenant) && $event->tenant->name === 'New Name');
 });
+
+test('updating a tenant flashes a status message', function () {
+    $admin = User::factory()->create();
+    $tenant = Tenant::factory()->create(['name' => 'Old Name']);
+    $tenant->users()->attach($admin, ['role' => Tenant::ADMIN_ROLE, 'last_accessed_at' => now()]);
+
+    $response = $this->actingAs($admin)->patch(route('tenants.update', $tenant), [
+        'tenant_name' => 'New Name',
+    ]);
+
+    $response->assertRedirect(route('tenants.edit', $tenant));
+    $response->assertSessionHas('status');
+});
