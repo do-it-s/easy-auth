@@ -7,5 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-No tagged release yet. Entries will be added here as changes land, and moved
-under a version heading when the first release is tagged.
+## [0.1.0] - 2026-07-10
+
+First tagged version. Still beta (see the README's Beta Notice) — 0.x
+signals the public API may still change. Passwordless authentication
+(passkeys + device UUID binding) with an email/password fallback, and an
+invitation-chain tenant/role model, on top of `laravel/passkeys`.

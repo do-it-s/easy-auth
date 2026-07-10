@@ -8,17 +8,25 @@ use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Foundation\Application;
 use Illuminate\Support\Facades\Schema;
 use Laravel\Passkeys\Passkeys;
+use Laravel\Passkeys\PasskeysServiceProvider;
 use Orchestra\Testbench\TestCase as BaseTestCase;
 
 abstract class TestCase extends BaseTestCase
 {
     /**
+     * Concrete action classes (StorePasskey, GenerateRegistrationOptions, ...)
+     * resolve fine via the container without this, but the contracts
+     * laravel/passkeys binds itself (e.g. PasskeyRegistrationResponse, which
+     * ProfileController::store() resolves) need its provider actually
+     * registered — a real host app gets this for free via Composer's package
+     * auto-discovery.
+     *
      * @param  Application  $app
      * @return array<int, class-string>
      */
     protected function getPackageProviders($app): array
     {
-        return [EasyAuthServiceProvider::class];
+        return [EasyAuthServiceProvider::class, PasskeysServiceProvider::class];
     }
 
     /**
