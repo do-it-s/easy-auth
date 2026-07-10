@@ -250,6 +250,29 @@ Event::listen(TenantUpdating::class, function (TenantUpdating $event): void {
 
 `resources/views/components/`配下のコンポーネントは、パッケージ側のデフォルトページでの組み合わせ方に縛られない自己完結設計になっている。例えば`profile/create`はパスキー登録(`passkey-registration-form`)とパスワード登録フォールバック(`password-registration-form`)を独立したコンポーネントとして提供しているため、アプリ側は両者を同一画面に並べる・別ルートに分ける・片方だけ使う、といった構成を自由に選べる。
 
+## ルートのカスタマイズ
+
+上記4つの手段は「既存のルートの中身」を差し替えるものであり、ルートそのもの(URL・HTTPメソッド・使うかどうか)は対象外。アプリがURLを変えたい、特定の機能(パスワード登録フォールバック等)のルート自体を無くしたい、といった場合は、`AppServiceProvider::register()`で`EasyAuth::ignoreRoutes()`を呼ぶ。
+
+```php
+use DoITs\EasyAuth\EasyAuth;
+
+public function register(): void
+{
+    EasyAuth::ignoreRoutes();
+}
+```
+
+これを呼ぶと、このパッケージは`routes/web.php`を一切登録しなくなる。以後はアプリ自身の`routes/web.php`に、このパッケージのコントローラ(`DoITs\EasyAuth\Http\Controllers\...`)を指定して好きなURL・ミドルウェアでルートを書く(このパッケージ自身の`routes/web.php`をコピー元にすると早い)。使わない機能のルートは単に書かなければよい。
+
+## 翻訳文言のカスタマイズ
+
+このパッケージのビュー・メール文言はすべて`easy-auth::`名前空間の翻訳キー経由(`lang/en`, `lang/ja`)。Laravel標準の仕組みにより、`lang/vendor/easy-auth/{locale}/`配下に同名ファイルを置けば自動的に上書きされる(コード変更・追加設定は不要)。ひな形が欲しい場合は以下でコピーできる。
+
+```
+php artisan vendor:publish --tag=easy-auth-lang
+```
+
 ## 既知の制限・将来の検討事項
 
 - `EnsureProfileIsComplete`ミドルウェアは`$user->name === ''`のみでプロフィール完了を判定する。アプリが独自の必須プロフィール項目(電話番号等)を追加しても、このミドルウェアは関知せず素通りしてしまう。

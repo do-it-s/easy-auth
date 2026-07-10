@@ -45,16 +45,24 @@ class EasyAuthServiceProvider extends ServiceProvider
             __DIR__.'/../resources/views' => resource_path('views/vendor/easy-auth'),
         ], 'easy-auth-views');
 
+        $this->publishes([
+            __DIR__.'/../lang' => lang_path('vendor/easy-auth'),
+        ], 'easy-auth-lang');
+
         $this->loadMigrationsFrom(__DIR__.'/../database/migrations');
         $this->loadViewsFrom(__DIR__.'/../resources/views', 'easy-auth');
         $this->loadTranslationsFrom(__DIR__.'/../lang', 'easy-auth');
 
         // loadRoutesFrom() alone does not inherit the host application's
         // "web" middleware group (session, CSRF, cookies, shared errors),
-        // so it must be applied explicitly here.
-        Route::middleware('web')->group(function () {
-            $this->loadRoutesFrom(__DIR__.'/../routes/web.php');
-        });
+        // so it must be applied explicitly here. Skipped entirely when a
+        // host app calls EasyAuth::ignoreRoutes(), since it means the app
+        // is declaring its own routes against this package's controllers.
+        if (EasyAuth::$registersRoutes) {
+            Route::middleware('web')->group(function () {
+                $this->loadRoutesFrom(__DIR__.'/../routes/web.php');
+            });
+        }
 
         $this->app['router']->aliasMiddleware('profile.complete', EnsureProfileIsComplete::class);
 
