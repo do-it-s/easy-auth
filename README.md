@@ -1,51 +1,42 @@
 # easy-auth
 
-パスキー(WebAuthn) + デバイスUUID束縛によるパスワードレス認証と、招待チェーン式のテナント/ロールモデルを提供するLaravelパッケージ。`laravel/passkeys`をラップし、その上に「パスキー非対応時のメール+パスワードフォールバック」「テナント単位の招待/バックアップコード」を実装している。
+English | [日本語](README.ja.md)
 
-## ⚠️ ベータ公開 / Beta Notice
+A Laravel package providing passwordless authentication via passkeys (WebAuthn) bound to device UUIDs, plus an invitation-chain tenant/role model. It wraps `laravel/passkeys` and adds an email+password fallback for devices without passkey support, along with per-tenant invitations and backup codes.
 
-このパッケージはまだPackagistに登録していないベータ段階です。作者はWebアプリケーション開発者であり、認証・セキュリティの専門家ではありません。設計判断には現時点で未解決の課題も残っています(下記「既知の制限・将来の検討事項」を参照)。これらを含む既知の課題を解消しながら、将来的にPackagistへの正式登録を目指しています。認証・セキュリティの知見をお持ちの方からのご指摘・フィードバックを歓迎します。
+## ⚠️ Beta Notice
 
-This package is in beta and not yet registered on Packagist. The author is a web application developer, not an authentication or security specialist, and some design decisions still have open questions (see "Known Limitations and Future Considerations" below). The goal is to register on Packagist once these and other known issues are addressed. Feedback from anyone with authentication or security expertise is very welcome.
+This package is registered on Packagist but is still in beta (0.x, pre-1.0). The author is a web application developer, not an authentication or security specialist, and some design decisions still have open questions (see "Known Limitations and Future Considerations" below). The goal is to reach 1.0 once these and other known issues are addressed. Feedback from anyone with authentication or security expertise is very welcome.
 
-## 前提
+## Requirements
 
 - PHP ^8.3, Laravel ^13.0
-- `laravel/passkeys` ^0.2.1, `endroid/qr-code` 6.0.* (composerで自動的に入る)
-- ホストアプリの標準Laravelマイグレーション(`users`, `password_reset_tokens`等)が削除されていないこと。このパッケージは`users`テーブル自体を所有せず、`password_reset_tokens`を使うパスワードリセット機能もホストアプリ側の標準テーブルにそのまま依存する
+- `laravel/passkeys` ^0.2.1, `endroid/qr-code` 6.0.* (pulled in automatically by Composer)
+- The host app's standard Laravel migrations (`users`, `password_reset_tokens`, etc.) must not have been removed. This package does not own the `users` table itself, and its password-reset feature relies directly on the host app's standard `password_reset_tokens` table.
 
-## インストール
+## Installation
 
-### 1. Composerで依存追加
+### 1. Add the dependency via Composer
 
-Packagistには未公開のため、GitHubリポジトリをVCSリポジトリとして参照する。
-
-```json
-{
-    "repositories": [
-        { "type": "vcs", "url": "https://github.com/do-it-s/easy-auth.git" }
-    ],
-    "require": {
-        "do-it-s/easy-auth": "dev-main"
-    }
-}
+```
+composer require do-it-s/easy-auth
 ```
 
-公開リポジトリなので認証情報の設定は不要。`dev-main`は`main`ブランチの最新コミットを指す。easy-auth側が更新された後にその変更を取り込みたい場合は、次を実行する:
+To pick up updates once easy-auth itself has been updated, run:
 
 ```
 composer update do-it-s/easy-auth
 ```
 
-### 2. `laravel/passkeys`のmigrationをpublish
+### 2. Publish `laravel/passkeys` migrations
 
-`laravel/passkeys`は`passkeys`テーブルのmigrationを自動ロードしない(`users.id`の型がホスト依存のため、アプリ側で編集できるようpublish方式を取っている)。
+`laravel/passkeys` does not auto-load the migration for the `passkeys` table (since the type of `users.id` depends on the host app, it uses a publish-based approach so the app can edit it).
 
 ```
 php artisan vendor:publish --tag=passkeys-migrations --no-interaction
 ```
 
-### 3. Userモデルを結線
+### 3. Wire up the User model
 
 ```php
 use DoITs\EasyAuth\Concerns\IsEasyAuthUser;
@@ -57,35 +48,35 @@ class User extends Authenticatable implements EasyAuthUser
 }
 ```
 
-`EasyAuthUser`は`laravel/passkeys`の`PasskeyUser`をextendし、`IsEasyAuthUser`は`PasskeyAuthenticatable`をuseしているので、アプリ側はこの1interface+1traitだけで済む(`PasskeyUser`/`PasskeyAuthenticatable`を個別に書く必要はない)。
+`EasyAuthUser` extends `laravel/passkeys`'s `PasskeyUser`, and `IsEasyAuthUser` uses `PasskeyAuthenticatable`, so the app only needs this one interface plus one trait (no need to write `PasskeyUser`/`PasskeyAuthenticatable` separately).
 
-### 4. `resources/views/layouts/app.blade.php`を用意
+### 4. Provide `resources/views/layouts/app.blade.php`
 
-このパッケージの全ビューは`@extends('layouts.app')`している。アプリ側のレイアウトは最低限、次を満たす必要がある:
+Every view in this package does `@extends('layouts.app')`. At minimum, the app's layout must satisfy:
 
-| 要素 | 理由 |
+| Element | Reason |
 |---|---|
-| `@yield('content')` | 各ビューの`@section('content')`の差し込み先 |
-| `@stack('scripts')` | `device/reset.blade.php`等が`@push('scripts')`する |
-| `<meta name="csrf-token" content="{{ csrf_token() }}">` | JS側のfetchが`X-CSRF-TOKEN`に使う |
+| `@yield('content')` | Where each view's `@section('content')` is injected |
+| `@stack('scripts')` | `device/reset.blade.php` and others `@push('scripts')` here |
+| `<meta name="csrf-token" content="{{ csrf_token() }}">` | Used by the JS side's fetch calls for `X-CSRF-TOKEN` |
 
-ヘッダーのナビゲーションやブランディング、Alpine.js等のUIフレームワーク選択は上記以外、完全にアプリの自由。`$user->currentTenant()`, `$user->tenants`, `$tenant->isAdministeredBy()`, `$tenant->hasUsableBackupCode()`等のヘルパーを使ってヘッダーにテナント切替UIを組み込む場合、`@can('create', [\DoITs\EasyAuth\Models\Invitation::class, $tenant])`のようにこのパッケージのモデル名前空間を参照すること。
+Header navigation, branding, and the choice of UI framework (Alpine.js, etc.) are otherwise entirely up to the app. If you build a tenant-switcher UI in the header using helpers like `$user->currentTenant()`, `$user->tenants`, `$tenant->isAdministeredBy()`, `$tenant->hasUsableBackupCode()`, reference this package's model namespace, e.g. `@can('create', [\DoITs\EasyAuth\Models\Invitation::class, $tenant])`.
 
-### 5. `home`ルートを用意
+### 5. Provide a `home` route
 
-サインイン・登録・招待受け入れ・テナント切替・パスワード変更等の完了後、このパッケージは`redirect()->route('home')`で遷移する。`home`という名前のルート自体はこのパッケージは定義しないため、アプリ側で用意する必要がある。
+After sign-in, registration, invitation acceptance, tenant switching, password change, etc. complete, this package redirects via `redirect()->route('home')`. This package does not define a route named `home` itself, so the app must provide one.
 
-このホーム画面は、サインイン中のユーザーがまだどのテナントにも所属していない状態(`$user->currentTenant()`が`null`を返す)を正しく表示できる必要がある。新規登録直後で招待を受けていない場合や、所属していた唯一のテナントを脱退した直後など、テナント未所属の状態は正常系として発生し得る。このパッケージはそのようなユーザーのサインイン・テナント作成・招待受け入れを問題なく許可する設計であり、そのテナント未所属ユーザーを自動的に削除・整理する仕組みは現時点では持たない(将来的な検討事項)。ホーム画面側は「テナントが無い」状態を前提に分岐を用意すること。
+This home screen must correctly handle the case where the signed-in user does not yet belong to any tenant (`$user->currentTenant()` returns `null`). This "no tenant" state is a normal, expected condition — for example, right after registering with no invitation yet accepted, or right after leaving the only tenant the user belonged to. This package is designed to allow such users to sign in, create a tenant, or accept an invitation without issue, and currently has no mechanism to automatically delete or clean up tenant-less users (a possible future consideration). The home screen should branch on the "no tenant" state as an expected case.
 
-### 6. マイグレーション実行
+### 6. Run migrations
 
 ```
 php artisan migrate
 ```
 
-### 7. フロントエンド(JS)
+### 7. Frontend (JS)
 
-`resources/js/`にpasskey登録/サインイン/パスワードフォールバックのJSが`@do-it-s/easy-auth-js`としてパッケージ化されている。アプリ側の`package.json`に追加:
+The passkey registration/sign-in/password-fallback JS in `resources/js/` is packaged as `@do-it-s/easy-auth-js`. Add it to the app's `package.json`:
 
 ```json
 {
@@ -95,7 +86,7 @@ php artisan migrate
 }
 ```
 
-アプリの`resources/js/app.js`:
+In the app's `resources/js/app.js`:
 
 ```js
 import { initEasyAuth } from '@do-it-s/easy-auth-js';
@@ -103,28 +94,28 @@ import { initEasyAuth } from '@do-it-s/easy-auth-js';
 initEasyAuth();
 ```
 
-**注意:** `file:`参照はリポジトリ外のディレクトリへのシンボリックリンクとして`node_modules`に入るだけで、npmはリンク先(`easy-auth/resources/js`)が宣言している`@laravel/passkeys`を**アプリ側のnode_modulesに自動で解決してくれない**(npm workspacesではない単純な`file:`依存は、対象が自分のリポジトリ外にあると依存解決を再帰しない)。Node/Viteのモジュール解決はシンボリックリンクの実体パスを辿って`node_modules`を探すため、`@laravel/passkeys`は**`easy-auth/resources/js`自身の`node_modules`に存在している必要がある**。つまりeasy-auth側で一度(またはpackage.json変更ごとに):
+**Note:** A `file:` reference only lands in `node_modules` as a symlink to a directory outside the repo — npm does **not** automatically resolve the `@laravel/passkeys` dependency declared by the link target (`easy-auth/resources/js`) into the app's own `node_modules` (a plain `file:` dependency that isn't an npm workspace does not recurse into dependency resolution when the target lives outside the app's own repo). Since Node/Vite module resolution follows the symlink to its real path and looks for `node_modules` from there, `@laravel/passkeys` must exist **inside `easy-auth/resources/js`'s own `node_modules`**. In other words, run this once on the easy-auth side (or whenever its `package.json` changes):
 
 ```
 cd easy-auth/resources/js
 npm install
 ```
 
-を実行しておくこと。これを忘れるとアプリ側の`npm run build`/`npm run dev`が`Failed to resolve import "@laravel/passkeys" from ".../easy-auth/resources/js/index.js"`で失敗する。
+Forgetting this causes the app's `npm run build`/`npm run dev` to fail with `Failed to resolve import "@laravel/passkeys" from ".../easy-auth/resources/js/index.js"`.
 
-(Alpine.js等、アプリ自身のJS初期化はこの前後で好きに行ってよい。easy-auth-jsはAlpineに依存していない。)
+(The app's own JS initialization — Alpine.js, etc. — can happen freely before or after this. `easy-auth-js` has no dependency on Alpine.)
 
-Windowsで`file:`依存がsymlink権限エラーになる場合は`.npmrc`に`install-links=true`を追加してコピーインストールに切り替えること。
+If a `file:` dependency causes a symlink permission error on Windows, add `install-links=true` to `.npmrc` to switch to a copy-based install instead.
 
-#### サインイン機能(`canAttemptSignIn` / `attemptSignIn`)
+#### Sign-in (`canAttemptSignIn` / `attemptSignIn`)
 
-WebAuthnの儀式はユーザの明確な操作を起点に試行すべきという原則から、このパッケージはページ到達時の自動サインイン試行を行わない。代わりに、ホストアプリ自身のguest home(トップページ等)に「サインイン」UIを置けるよう、2つの関数を提供する。UIの表示/非表示の決定・試行結果を受けた後の画面遷移は、すべてアプリ側の責務になる。
+On the principle that a WebAuthn ceremony should only be attempted in response to an explicit user action, this package does not attempt sign-in automatically on page load. Instead, it exposes two functions so the host app's own guest home page (e.g. the top page) can offer a "Sign in" UI. Deciding whether to show/hide that UI, and where to navigate after the attempt resolves, are entirely the app's responsibility.
 
 ```js
 import { canAttemptSignIn, attemptSignIn } from '@do-it-s/easy-auth-js';
 
 if (canAttemptSignIn()) {
-    // 「サインイン」ボタンなど、明示的な操作を要するUIを表示する。
+    // Show UI that requires an explicit action, such as a "Sign in" button.
 }
 
 signInButton.addEventListener('click', async () => {
@@ -133,22 +124,22 @@ signInButton.addEventListener('click', async () => {
     if (outcome === 'success') {
         window.location.href = redirect;
     } else if (outcome === 'fallback') {
-        // このデバイスはパスワード認証ユーザー。パッケージの/loginへ案内する。
+        // This device is a password-auth user. Send them to the package's /login.
         window.location.href = '/login';
     } else {
-        // outcome === 'failure'。キャンセル・該当パスキー無し・サーバ拒否のいずれかだが、
-        // アプリ側でこれ以上の種類分けはできない/する必要がない。
+        // outcome === 'failure'. Could be cancellation, no matching passkey, or a
+        // server rejection — the app cannot and does not need to distinguish further.
     }
 });
 ```
 
-- `canAttemptSignIn()`は`device_uuid`の有無だけを見た**目安**であり、サインインが必ず成功する保証ではない(WebAuthnの仕様上、儀式を行わずに「該当する認証情報があるか」を確実に知る方法は無い)。
-- `attemptSignIn()`はクリックなど明確な操作からのみ呼ぶこと。DOM書き込み・画面遷移は一切行わないため、`outcome`に応じた表示・遷移は呼び出し側で用意する。
-- 旧バージョンはトップページ到達時に自動でサインインを試行していたが、本バージョンではこの自動試行を廃止した。アプリ側で上記のような明示的なUIを用意しないと、登録済みデバイスでもサインインできなくなる(後方互換を破る変更)。
+- `canAttemptSignIn()` only checks whether a `device_uuid` is present — it's a **heuristic**, not a guarantee that sign-in will succeed (WebAuthn's spec offers no way to reliably know "is there a matching credential" without actually running the ceremony).
+- Only call `attemptSignIn()` in response to an explicit action such as a click. It never touches the DOM or navigates, so the caller must handle display/navigation based on `outcome`.
+- Earlier versions attempted sign-in automatically on reaching the top page; this version removes that automatic attempt. Without an explicit UI like the one above, even a device with an existing passkey will no longer be able to sign in (a breaking change).
 
-#### 登録・パスワードサインイン機能(プリミティブ / `initEasyAuth`)
+#### Registration and password sign-in (primitives / `initEasyAuth`)
 
-`registerPasskey` / `registerWithPassword` / `signInWithPassword`はDOM読み書きを一切行わないプリミティブで、`{ outcome: 'success', redirect }`または`{ outcome: 'failure', code, errors? }`を返す。`code`は`name_required` / `ceremony_failed` / `validation` / `server_error` / `network_error`のいずれか(`validation`の時だけ`errors`にLaravel側で翻訳済みのフィールド別メッセージが入る)。独自フォーム・独自UIをアプリ側で完全に組みたい場合はこれらを直接呼ぶ。
+`registerPasskey` / `registerWithPassword` / `signInWithPassword` are primitives that never touch the DOM; they return either `{ outcome: 'success', redirect }` or `{ outcome: 'failure', code, errors? }`. `code` is one of `name_required` / `ceremony_failed` / `validation` / `server_error` / `network_error` (only `validation` includes `errors`, with per-field messages already translated on the Laravel side). If you want to build a fully custom form/UI on the app side, call these directly.
 
 ```js
 import { registerPasskey, registerWithPassword, signInWithPassword } from '@do-it-s/easy-auth-js';
@@ -158,11 +149,11 @@ const result = await registerPasskey({ name, passkeyLabel: 'My device' });
 if (result.outcome === 'success') {
     window.location.href = result.redirect;
 } else {
-    // result.code に応じて自前のUIで表示する
+    // Render your own UI based on result.code
 }
 ```
 
-このパッケージ自身が同梱するデフォルトビュー(`profile/create.blade.php`, `auth/sign-in.blade.php`等)の既知のフォームIDにだけ配線する便利関数が`initEasyAuth()`で、これが上記プリミティブ+パスキー非対応時のパスワードフォーム自動切替のようなデフォルトビュー固有のUI気配りをまとめて行う。独自ビューを使うアプリはこの関数を呼ばなければ、この配線・UI気配りは自然に無効化される。
+`initEasyAuth()` is a convenience function that wires up only the known form IDs found in this package's own default views (`profile/create.blade.php`, `auth/sign-in.blade.php`, etc.). It bundles the primitives above together with default-view-specific UI conveniences, such as automatically switching to the password form when passkeys aren't supported. Apps using their own custom views simply don't call this function, and this wiring/UI convenience is naturally disabled.
 
 ```js
 import { initEasyAuth } from '@do-it-s/easy-auth-js';
@@ -170,7 +161,7 @@ import { initEasyAuth } from '@do-it-s/easy-auth-js';
 initEasyAuth();
 ```
 
-デフォルトでは失敗時にこのパッケージ自身のビューが持つ状態表示要素(`#passkey-status`, `#sign-in-status`)に`textContent`で書き込む。トースト通知等、アプリ独自のUIに差し替えたい場合は`onStatus`を渡す(フォーム配線・WebAuthn儀式の呼び出し自体は`initEasyAuth()`に任せたまま、表示だけ差し替えられる):
+By default, on failure it writes to the status elements (`#passkey-status`, `#sign-in-status`) present in this package's own views via `textContent`. To swap in your own UI (e.g. toast notifications), pass `onStatus` (the form wiring and WebAuthn ceremony calls themselves stay handled by `initEasyAuth()` — only the display is replaced):
 
 ```js
 initEasyAuth({
@@ -180,11 +171,11 @@ initEasyAuth({
 });
 ```
 
-`message`はこのパッケージが用意した翻訳済み文言(サーバーバリデーションの場合は`errors`を結合したもの)。`code`は`outcome: 'failure'`の内訳で、必要ならさらに細かい分岐に使える。
+`message` is this package's pre-translated copy (for server validation, the joined `errors`). `code` is the breakdown for `outcome: 'failure'`, usable for finer-grained branching if needed.
 
-#### デバイスの認証情報(`getDeviceCredentials` / `clearDeviceCredentials`)
+#### Device credentials (`getDeviceCredentials` / `clearDeviceCredentials`)
 
-`device_uuid`/`auth_method`という2つのlocalStorageキーを直接読み書きする代わりに使う。
+Use these instead of reading/writing the two `device_uuid`/`auth_method` localStorage keys directly.
 
 ```js
 import { getDeviceCredentials, clearDeviceCredentials } from '@do-it-s/easy-auth-js';
@@ -192,11 +183,11 @@ import { getDeviceCredentials, clearDeviceCredentials } from '@do-it-s/easy-auth
 const { device_uuid, auth_method } = getDeviceCredentials();
 ```
 
-### 8. 例外ハンドラがJSONを返せることを確認
+### 8. Confirm the exception handler can return JSON
 
-このパッケージの`/login`・`/profile-password`等は`api/*`配下ではなく、`Accept: application/json`ヘッダーによる通常のコンテンツネゴシエーション(`Request::expectsJson()`のデフォルト挙動)でJSONを返す設計になっている。
+This package's `/login`, `/profile-password`, and similar routes are not under `api/*` — they return JSON via normal content negotiation triggered by the `Accept: application/json` header (the default behavior of `Request::expectsJson()`).
 
-`bootstrap/app.php`に次のような記述があると、`api/*`以外のルートでは常にHTMLレスポンスが強制され、`ValidationException`等が302リダイレクト(HTML)で返ってしまう。JS側は`response.json()`でその`<!DOCTYPE ...`をパースしようとして`Unexpected token '<' ... is not valid JSON`で失敗する:
+If `bootstrap/app.php` contains something like the following, routes outside `api/*` are always forced to an HTML response, and things like `ValidationException` come back as a 302 redirect (HTML) instead. The JS side then fails trying to `response.json()` that `<!DOCTYPE ...` with `Unexpected token '<' ... is not valid JSON`:
 
 ```php
 ->withExceptions(function (Exceptions $exceptions): void {
@@ -206,40 +197,40 @@ const { device_uuid, auth_method } = getDeviceCredentials();
 })
 ```
 
-これはLaravelの新規プロジェクト雛形に含まれることがあるが、`routes/api.php`を持たないアプリではAPIルートを一切JSON化できないだけの制約になっている。easy-auth導入時はこのコールバックを削除する(空の`withExceptions`に戻す)か、`$request->is('api/*') || $request->expectsJson()`に書き換えること。
+This sometimes ships in Laravel's default project skeleton, but for an app without a `routes/api.php`, it's effectively a constraint that prevents any route from ever being JSON-ified. When adopting easy-auth, either remove this callback (revert to an empty `withExceptions`) or rewrite it as `$request->is('api/*') || $request->expectsJson()`.
 
-## ビューのカスタマイズ
+## Customizing views
 
-easy-authが提供するビューは、アプリが何も用意しなくても認証フロー一式が動く(デフォルト完結)ことを保証しつつ、以下の4つの手段でアプリ側からカスタマイズできる。
+Views provided by easy-auth guarantee the entire auth flow works out of the box with zero app-side setup, while still being customizable via four mechanisms:
 
-### 1. ページ全体・コンポーネント単位の差し替え(`vendor:publish`)
+### 1. Whole-page or per-component overrides (`vendor:publish`)
 
 ```
 php artisan vendor:publish --tag=easy-auth-views
 ```
 
-`resources/views/vendor/easy-auth/`にビュー一式がコピーされ、以後はコピーされたファイルが優先して使われる(Laravel標準のビュー名前空間解決)。`resources/views/`配下は「1画面=1ページ」(例: `auth/sign-in.blade.php`)と、実際のフォーム等を持つ「機能コンポーネント」(`resources/views/components/`配下、例: `components/auth/sign-in-form.blade.php`)の2層構造になっている。ページの見た目だけを変えたいならページ側だけをコピーして`<x-easy-auth::auth.sign-in-form />`は元のコンポーネントのまま使い続けることもできるし、コンポーネント自体を丸ごと差し替えることもできる。
+This copies the full set of views into `resources/views/vendor/easy-auth/`; from then on, the copied files take priority (standard Laravel view-namespace resolution). `resources/views/` is structured in two layers: "one screen = one page" (e.g. `auth/sign-in.blade.php`), and the "feature components" that hold the actual forms etc. (under `resources/views/components/`, e.g. `components/auth/sign-in-form.blade.php`). If you only want to change a page's look, you can copy just the page and keep using the original component via `<x-easy-auth::auth.sign-in-form />`, or you can replace the component entirely.
 
-サインイン・パスワード再設定リンク送信・プロフィール編集・組織編集の各フォームが表示する成功時ステータス(`session('status')`の緑字メッセージ)は、フォーム全体とは別に`components/shared/status-message.blade.php`という小さな共有コンポーネントに切り出されている。アプリ側で(例えばトースト通知に一本化するなどの理由で)このメッセージだけを消したい場合、フォーム全体をコピーして編集する必要はなく、`resources/views/vendor/easy-auth/components/shared/status-message.blade.php`を空ファイルとして作成すれば済む。
+The success-status message (the green `session('status')` text) shown by the sign-in, password-reset-link, profile-edit, and organization-edit forms is factored out of each form into a small shared component, `components/shared/status-message.blade.php`. If the app wants to remove just this message (e.g. to consolidate on toast notifications), there's no need to copy and edit the whole form — simply create `resources/views/vendor/easy-auth/components/shared/status-message.blade.php` as an empty file.
 
-### 2. 既存フォームへの項目追加(`@stack`)
+### 2. Adding fields to existing forms (`@stack`)
 
-主要なフォームコンポーネントには、submitボタン直前に`@stack('easy-auth::components.{domain}.{name}.after-fields')`という差し込みポイントがある(例: `tenants/edit`フォームなら`easy-auth::components.tenants.edit-form.after-fields`)。アプリ側は任意のビューから`@push`するだけで、ページをコピーせずに項目を追加できる。
+Major form components have an injection point right before the submit button, `@stack('easy-auth::components.{domain}.{name}.after-fields')` (e.g. for the `tenants/edit` form, it's `easy-auth::components.tenants.edit-form.after-fields`). The app can add fields without copying the page, just by `@push`ing from any view.
 
 ```blade
 @push('easy-auth::components.tenants.edit-form.after-fields')
     <label class="flex items-center gap-2 mb-4 text-sm">
         <input type="checkbox" name="my_app_flag" value="1">
-        独自の設定項目
+        My custom setting
     </label>
 @endpush
 ```
 
-一覧系ビュー(`tenants/members/index`, `tenants/invitations/index`)の各行には、`@stack`ではなく`@includeIf('vendor.easy-auth.tenants.member-row-actions', [...])`のようなループ対応の差し込みポイントがある。デフォルトでは何も描画されず、アプリ側が`resources/views/vendor/easy-auth/tenants/member-row-actions.blade.php`(渡される変数はコンポーネントごとに異なる。各コンポーネントのソースを参照)を作成すると、行ごとに独自のボタン等を追加できる。
+List views (`tenants/members/index`, `tenants/invitations/index`) instead expose a loop-friendly injection point per row, via `@includeIf('vendor.easy-auth.tenants.member-row-actions', [...])`. By default nothing is rendered; once the app creates `resources/views/vendor/easy-auth/tenants/member-row-actions.blade.php` (the variables passed differ per component — check each component's source), it can add its own buttons etc. to each row.
 
-### 3. 変更操作前後のフック(Laravel Event)
+### 3. Before/after hooks for mutating operations (Laravel events)
 
-テナント更新・招待作成・メンバー削除等の主要な変更操作は、前後に`DoITs\EasyAuth\Events\`配下のイベントを発火する(例: `TenantUpdating`/`TenantUpdated`, `InvitationCreating`/`InvitationCreated`)。`*ing`系イベントは検証済み配列ではなく生の`Request`(または元データ)を保持しているため、リスナー側で自分のフィールドを読み取り、`fillable`に含まれないカラムでも直接代入で保存できる。
+Major mutating operations — tenant updates, invitation creation, member removal, etc. — fire events under `DoITs\EasyAuth\Events\` before and after (e.g. `TenantUpdating`/`TenantUpdated`, `InvitationCreating`/`InvitationCreated`). The `*ing` events carry the raw `Request` (or source data) rather than a validated array, so a listener can read its own fields and save them directly, even for columns not included in `fillable`.
 
 ```php
 Event::listen(TenantUpdating::class, function (TenantUpdating $event): void {
@@ -248,34 +239,34 @@ Event::listen(TenantUpdating::class, function (TenantUpdating $event): void {
 });
 ```
 
-このパッケージが発火するイベントは以下の25個。`{Model}{Verb}ing`/`{Model}{Verb}ed`という命名はEloquentの`Creating`/`Created`系と同型で、全ての変更操作を一括で網羅している(実際にリスナーで使われている例は現状少ないが、将来アプリ側が任意の操作にフックできるよう先回りして揃えたもの)。
+This package fires the following 25 events. The `{Model}{Verb}ing`/`{Model}{Verb}ed` naming mirrors Eloquent's `Creating`/`Created` pattern and covers every mutating operation (in-house use of listeners is currently limited, but the full set was laid out proactively so the app can hook into any operation in the future).
 
-| 契機 | 発火元 | `*ing`(検証前) | `*ed`(保存後) |
+| Trigger | Fired from | `*ing` (before validation) | `*ed` (after save) |
 | --- | --- | --- | --- |
-| 新規登録(パスワード) | `Auth\RegisterController` | - | `UserRegistered`(`context: 'password'`) |
-| 新規登録(パスキー) | `ProfileController` | - | `UserRegistered`(`context: 'passkey'`) |
-| プロフィール編集 | `ProfileController` | `ProfileUpdating` | `ProfileUpdated` |
-| アカウント削除(ログイン中の本人操作) | `ProfileController` | `AccountDeleting` | `AccountDeleted` |
-| アカウント削除(デバイス不一致からのセルフサービス退会) | `Auth\AccountDeletionController` | `AccountDeleting` | `AccountDeleted` |
-| パスワード再設定 | `Auth\PasswordResetController` | `PasswordResetting` | `PasswordResetCompleted` |
-| バックアップコード発行 | `BackupCodeController` | `BackupCodeIssuing` | `BackupCodeIssued` |
-| 招待作成 | `InvitationController` | `InvitationCreating` | `InvitationCreated` |
-| 招待失効 | `InvitationController` | `InvitationRevoking` | `InvitationRevoked` |
-| 招待redeem(参加) | `InvitationRedemptionController` | `InvitationRedeeming` | `InvitationRedeemed` |
-| 組織作成 | `TenantController` | `TenantCreating` | `TenantCreated` |
-| 組織編集 | `TenantController` | `TenantUpdating` | `TenantUpdated` |
-| 組織削除 | `TenantController` | `TenantDeleting` | `TenantDeleted` |
-| メンバー自己脱退 | `TenantLeaveController` | `TenantMemberRemoving` | `TenantMemberRemoved` |
-| メンバー削除(管理者操作) | `TenantMemberController` | `TenantMemberRemoving` | `TenantMemberRemoved` |
-| メンバーのロール変更 | `TenantMemberController` | `TenantMemberRoleUpdating` | `TenantMemberRoleUpdated` |
+| Registration (password) | `Auth\RegisterController` | - | `UserRegistered` (`context: 'password'`) |
+| Registration (passkey) | `ProfileController` | - | `UserRegistered` (`context: 'passkey'`) |
+| Profile edit | `ProfileController` | `ProfileUpdating` | `ProfileUpdated` |
+| Account deletion (self, while signed in) | `ProfileController` | `AccountDeleting` | `AccountDeleted` |
+| Account deletion (self-service, from device mismatch) | `Auth\AccountDeletionController` | `AccountDeleting` | `AccountDeleted` |
+| Password reset | `Auth\PasswordResetController` | `PasswordResetting` | `PasswordResetCompleted` |
+| Backup code issuance | `BackupCodeController` | `BackupCodeIssuing` | `BackupCodeIssued` |
+| Invitation creation | `InvitationController` | `InvitationCreating` | `InvitationCreated` |
+| Invitation revocation | `InvitationController` | `InvitationRevoking` | `InvitationRevoked` |
+| Invitation redemption (join) | `InvitationRedemptionController` | `InvitationRedeeming` | `InvitationRedeemed` |
+| Organization creation | `TenantController` | `TenantCreating` | `TenantCreated` |
+| Organization edit | `TenantController` | `TenantUpdating` | `TenantUpdated` |
+| Organization deletion | `TenantController` | `TenantDeleting` | `TenantDeleted` |
+| Member self-removal | `TenantLeaveController` | `TenantMemberRemoving` | `TenantMemberRemoved` |
+| Member removal (by admin) | `TenantMemberController` | `TenantMemberRemoving` | `TenantMemberRemoved` |
+| Member role change | `TenantMemberController` | `TenantMemberRoleUpdating` | `TenantMemberRoleUpdated` |
 
-### 4. 機能コンポーネントの組み替え
+### 4. Recomposing feature components
 
-`resources/views/components/`配下のコンポーネントは、パッケージ側のデフォルトページでの組み合わせ方に縛られない自己完結設計になっている。例えば`profile/create`はパスキー登録(`passkey-registration-form`)とパスワード登録フォールバック(`password-registration-form`)を独立したコンポーネントとして提供しているため、アプリ側は両者を同一画面に並べる・別ルートに分ける・片方だけ使う、といった構成を自由に選べる。
+Components under `resources/views/components/` are self-contained and not tied to how the package's default pages combine them. For example, `profile/create` provides passkey registration (`passkey-registration-form`) and the password-registration fallback (`password-registration-form`) as independent components, so the app is free to place both on the same screen, split them into separate routes, or use only one.
 
-## ルートのカスタマイズ
+## Customizing routes
 
-上記4つの手段は「既存のルートの中身」を差し替えるものであり、ルートそのもの(URL・HTTPメソッド・使うかどうか)は対象外。アプリがURLを変えたい、特定の機能(パスワード登録フォールバック等)のルート自体を無くしたい、といった場合は、`AppServiceProvider::register()`で`EasyAuth::ignoreRoutes()`を呼ぶ。
+The four mechanisms above replace the *contents* of existing routes; the routes themselves (URL, HTTP method, whether to use them at all) are out of scope. If the app wants to change a URL, or drop a specific feature's route entirely (e.g. the password-registration fallback), call `EasyAuth::ignoreRoutes()` from `AppServiceProvider::register()`.
 
 ```php
 use DoITs\EasyAuth\EasyAuth;
@@ -286,20 +277,20 @@ public function register(): void
 }
 ```
 
-これを呼ぶと、このパッケージは`routes/web.php`を一切登録しなくなる。以後はアプリ自身の`routes/web.php`に、このパッケージのコントローラ(`DoITs\EasyAuth\Http\Controllers\...`)を指定して好きなURL・ミドルウェアでルートを書く(このパッケージ自身の`routes/web.php`をコピー元にすると早い)。使わない機能のルートは単に書かなければよい。
+Once called, this package registers no `routes/web.php` at all. From then on, the app writes its own routes in its own `routes/web.php`, pointing at this package's controllers (`DoITs\EasyAuth\Http\Controllers\...`) with whatever URLs and middleware it wants (copying this package's own `routes/web.php` as a starting point is the fastest way). Simply omit routes for any feature you don't want.
 
-## 翻訳文言のカスタマイズ
+## Customizing translated copy
 
-このパッケージのビュー・メール文言はすべて`easy-auth::`名前空間の翻訳キー経由(`lang/en`, `lang/ja`)。Laravel標準の仕組みにより、`lang/vendor/easy-auth/{locale}/`配下に同名ファイルを置けば自動的に上書きされる(コード変更・追加設定は不要)。ひな形が欲しい場合は以下でコピーできる。
+All of this package's view and email copy goes through translation keys under the `easy-auth::` namespace (`lang/en`, `lang/ja`). Thanks to Laravel's standard mechanism, placing a same-named file under `lang/vendor/easy-auth/{locale}/` automatically overrides it (no code changes or extra configuration needed). To get a starting template, copy it with:
 
 ```
 php artisan vendor:publish --tag=easy-auth-lang
 ```
 
-## 既知の制限・将来の検討事項
+## Known Limitations and Future Considerations
 
-- `EnsureProfileIsComplete`ミドルウェアは`$user->name === ''`のみでプロフィール完了を判定する。アプリが独自の必須プロフィール項目(電話番号等)を追加しても、このミドルウェアは関知せず素通りしてしまう。
-- パスキー登録時のWebAuthnオプション(`userVerification`・`residentKey`)は`laravel/passkeys`のデフォルト値(いずれも`required`)に委ねており、easy-auth側で上書きする設定項目は無い。
-- 登録時にAuthenticatorのBE(Backup Eligible)フラグを確認し、クラウド同期可能なパスキー(iCloudキーチェーン等で複数デバイスに同期されるもの)の登録を拒否する機能を`DoITs\EasyAuth\Actions\RejectSyncedPasskey`として用意している。デバイスUUID束縛は「招待されたデバイスである」ことの証明であり、同期パスキーはこの保証を(招待redeem時に組織外のデバイスでも人の正当性チェックを通過できてしまう形で)弱め得る。しかしこの拒否を有効にすると、ブラウザのパスワードマネージャー拡張機能(1Password等)がOS側のパスキー選択ダイアログからプラットフォーム認証器(Windows Hello等)を実質排除してしまう環境で、デバイス専用パスキーを新規作成する手段が無くなり、登録自体が不可能になるケースが実機で確認された。かんたん認証はメール/パスワードへのフォールバックを意図的に持たない設計のため、この詰みは「組織境界が同期パスキー分だけ弱まる」リスクより重いと判断し、`config('easy-auth.reject_backup_eligible_passkeys')`(`.env`の`EASY_AUTH_REJECT_BACKUP_ELIGIBLE_PASSKEYS`)でデフォルトoffにしている。サービス単位でoffからonに切り替える設定は用意した(`php artisan vendor:publish --tag=easy-auth-config`または`.env`で上書き)。
-- 登録時に`authenticatorAttachment`をplatformに強制し、選択ダイアログ自体からクロスプラットフォーム認証器・パスワードマネージャーのみの選択肢を除外する機能を`config('easy-auth.force_platform_authenticator')`(`.env`の`EASY_AUTH_FORCE_PLATFORM_AUTHENTICATOR`)で用意している。デフォルトoff、かつ今後もoffのままにする方針。Windows 11 + 1Password環境で実機検証したところ、`authenticatorAttachment: platform`を強制しても1Passwordは選択ダイアログから排除されず選択可能なまま残り、それを選んだ場合`reject_backup_eligible_passkeys`のBE拒否に引っかかって完了できない、という結果になった。この設定が意図した「Helloだけに絞り込む」効果はブラウザ・拡張機能の組み合わせによっては働かないと確認できたため、onにする積極的な理由が無いと判断し、offをデフォルトかつ最終的な結論とした。
-- 招待の「最大使用回数」を1より大きく設定できる(1つの招待リンクを複数人で使い回せる)機能は`config('easy-auth.multi_use_invitations')`(`.env`の`EASY_AUTH_MULTI_USE_INVITATIONS`)でデフォルトoffにしている。デバイスUUID束縛・招待チェインという設計は「誰が誰を招待したか」の暗黙の追跡を前提としており、複数回redeem可能な招待はこれを弱める。加えてこの項目はシステム管理者的な判断を要するものであり、一般のテナント管理者・メンバーが自由に触れる設定であるべきではないと判断した。offの間は招待フォームから「最大使用回数」欄自体が消え、送信された値の有無に関わらずサーバー側で強制的に`max_uses=1`(単一使用)になる。
+- The `EnsureProfileIsComplete` middleware determines profile completeness solely from `$user->name === ''`. If the app adds its own required profile fields (e.g. a phone number), this middleware is unaware of them and lets the request through regardless.
+- The WebAuthn options used at passkey registration (`userVerification`, `residentKey`) are left at `laravel/passkeys`'s defaults (both `required`); easy-auth exposes no setting to override them.
+- A feature to check the authenticator's BE (Backup Eligible) flag at registration and reject passkeys that can sync to the cloud (e.g. via iCloud Keychain across multiple devices) is provided as `DoITs\EasyAuth\Actions\RejectSyncedPasskey`. Device-UUID binding is the proof that "this is the invited device," and a syncable passkey can weaken that guarantee (by letting someone pass the identity check on a device outside the organization at invitation-redemption time). However, enabling this rejection was found, on real hardware, to make registration entirely impossible in environments where a browser password-manager extension (e.g. 1Password) effectively crowds the platform authenticator (Windows Hello, etc.) out of the OS's passkey-selection dialog, leaving no way to create a new device-only passkey. Since easy-auth intentionally has no email/password fallback, this dead end was judged worse than the risk of the organization boundary being weakened by synced passkeys, so `config('easy-auth.reject_backup_eligible_passkeys')` (`.env`'s `EASY_AUTH_REJECT_BACKUP_ELIGIBLE_PASSKEYS`) defaults to off. A per-service switch from off to on is provided (`php artisan vendor:publish --tag=easy-auth-config`, or override via `.env`).
+- A feature to force `authenticatorAttachment` to `platform` at registration, excluding cross-platform authenticators and password managers from the selection dialog itself, is provided via `config('easy-auth.force_platform_authenticator')` (`.env`'s `EASY_AUTH_FORCE_PLATFORM_AUTHENTICATOR`). It defaults to off, and the plan is to keep it off going forward. Real-hardware testing on Windows 11 + 1Password found that forcing `authenticatorAttachment: platform` did not remove 1Password from the selection dialog — it remained selectable, and choosing it then hit the `reject_backup_eligible_passkeys` BE rejection, blocking completion. Since this setting's intended effect of "narrowing the choice down to Hello only" was confirmed not to hold for some browser/extension combinations, there was no compelling reason to turn it on, so off was kept as both the default and the final conclusion.
+- Allowing an invitation's "maximum uses" to be set above 1 (letting a single invitation link be reused by multiple people) is provided via `config('easy-auth.multi_use_invitations')` (`.env`'s `EASY_AUTH_MULTI_USE_INVITATIONS`), defaulting to off. The device-UUID-binding and invitation-chain design assumes implicit tracking of "who invited whom," and an invitation redeemable multiple times weakens that. This setting also calls for a system-administrator-level judgment call, and was judged not to be something an ordinary tenant admin or member should be able to freely toggle. While off, the "maximum uses" field itself is removed from the invitation form, and the server forces `max_uses=1` (single use) regardless of any submitted value.
