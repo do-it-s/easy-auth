@@ -35,4 +35,15 @@ return [
     // registration flows' immediate login.
     'remember_me' => env('EASY_AUTH_REMEMBER_ME', true),
 
+    // Whether invitation creators may set a maximum redemption count greater
+    // than one, letting a single invitation link be reused by several
+    // people. Defaults to false: this is a system-administration knob (it
+    // trades the device-UUID/invitation-chain model's implicit one-invite-
+    // per-person audit trail for convenience), not something an ordinary
+    // tenant admin or member should be able to reach for on their own. When
+    // disabled, the "maximum uses" field is hidden from the invitation form
+    // and every invitation is created single-use (max_uses forced to 1
+    // server-side, regardless of what the request submits).
+    'multi_use_invitations' => env('EASY_AUTH_MULTI_USE_INVITATIONS', false),
+
 ];

@@ -26,9 +26,11 @@
         <p class="mb-4 text-[#F53003] dark:text-[#FF4433]">{{ $message }}</p>
     @enderror
 
-    @error('max_uses')
-        <p class="mb-4 text-[#F53003] dark:text-[#FF4433]">{{ $message }}</p>
-    @enderror
+    @if (config('easy-auth.multi_use_invitations'))
+        @error('max_uses')
+            <p class="mb-4 text-[#F53003] dark:text-[#FF4433]">{{ $message }}</p>
+        @enderror
+    @endif
 
     <form method="POST" action="{{ route('tenants.invitations.store', $tenant) }}">
         @csrf
@@ -55,16 +57,18 @@
             class="w-full mb-4 px-2 py-1.5 border border-[#19140035] dark:border-[#3E3E3A] rounded-sm text-sm"
         >
 
-        <label for="max_uses" class="block mb-1 text-sm">{{ __('easy-auth::invitations.max_uses') }}</label>
+        @if (config('easy-auth.multi_use_invitations'))
+            <label for="max_uses" class="block mb-1 text-sm">{{ __('easy-auth::invitations.max_uses') }}</label>
 
-        <input
-            id="max_uses"
-            name="max_uses"
-            type="number"
-            min="1"
-            value="{{ old('max_uses', 1) }}"
-            class="w-full mb-4 px-2 py-1.5 border border-[#19140035] dark:border-[#3E3E3A] rounded-sm text-sm"
-        >
+            <input
+                id="max_uses"
+                name="max_uses"
+                type="number"
+                min="1"
+                value="{{ old('max_uses', 1) }}"
+                class="w-full mb-4 px-2 py-1.5 border border-[#19140035] dark:border-[#3E3E3A] rounded-sm text-sm"
+            >
+        @endif
 
         @if ($isAdmin)
             <label class="flex items-center gap-2 mb-4 text-sm">

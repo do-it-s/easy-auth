@@ -71,6 +71,12 @@ class InvitationController extends Controller
             'max_uses' => ['nullable', 'integer', 'min:1'],
         ], trans('easy-auth::validation'));
 
+        // The multi-use knob is system-administration territory (see
+        // config('easy-auth.multi_use_invitations')'s docblock), so a
+        // submitted max_uses is only honored while it's enabled; otherwise
+        // every invitation is forced single-use regardless of request input.
+        $maxUses = config('easy-auth.multi_use_invitations') ? ($validated['max_uses'] ?? null) : 1;
+
         $token = Invitation::generateToken();
 
         InvitationCreating::dispatch($tenant, $request->user(), $validated);
@@ -80,7 +86,7 @@ class InvitationController extends Controller
             'token' => Invitation::hashToken($token),
             'label' => $validated['label'] ?? null,
             'expires_at' => $validated['expires_at'] ?? null,
-            'max_uses' => $validated['max_uses'] ?? null,
+            'max_uses' => $maxUses,
             'created_by' => $request->user()->id,
         ]);
 

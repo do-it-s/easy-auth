@@ -63,7 +63,8 @@ test('admin can issue an eternal admin invitation', function () {
     expect($invitation->expires_at)->toBeNull();
 });
 
-test('admin can issue a reusable invitation with a maximum number of uses', function () {
+test('admin can issue a reusable invitation with a maximum number of uses when multi-use invitations are enabled', function () {
+    config(['easy-auth.multi_use_invitations' => true]);
     $admin = User::factory()->create(['name' => 'Admin']);
     $tenant = Tenant::factory()->create();
     attachTenantMember($tenant, $admin, Tenant::ADMIN_ROLE);
@@ -79,7 +80,8 @@ test('admin can issue a reusable invitation with a maximum number of uses', func
     expect($invitation->max_uses)->toBe(3);
 });
 
-test('admin can issue an invitation with unlimited uses by leaving max_uses blank', function () {
+test('admin can issue an invitation with unlimited uses by leaving max_uses blank when multi-use invitations are enabled', function () {
+    config(['easy-auth.multi_use_invitations' => true]);
     $admin = User::factory()->create(['name' => 'Admin']);
     $tenant = Tenant::factory()->create();
     attachTenantMember($tenant, $admin, Tenant::ADMIN_ROLE);
@@ -93,6 +95,56 @@ test('admin can issue an invitation with unlimited uses by leaving max_uses blan
 
     $invitation = Invitation::where('tenant_id', $tenant->id)->first();
     expect($invitation->max_uses)->toBeNull();
+});
+
+test('a submitted max_uses is ignored and forced to 1 when multi-use invitations are disabled', function () {
+    expect(config('easy-auth.multi_use_invitations'))->toBeFalse();
+    $admin = User::factory()->create(['name' => 'Admin']);
+    $tenant = Tenant::factory()->create();
+    attachTenantMember($tenant, $admin, Tenant::ADMIN_ROLE);
+
+    $response = $this->actingAs($admin)->post(route('tenants.invitations.store', $tenant), [
+        'role' => Tenant::MEMBER_ROLE,
+        'max_uses' => 5,
+    ]);
+
+    $response->assertRedirect(route('tenants.invitations.create', $tenant));
+
+    $invitation = Invitation::where('tenant_id', $tenant->id)->first();
+    expect($invitation->max_uses)->toBe(1);
+});
+
+test('the max_uses field is hidden from the invitation form unless multi-use invitations are enabled', function () {
+    $admin = User::factory()->create(['name' => 'Admin']);
+    $tenant = Tenant::factory()->create();
+    attachTenantMember($tenant, $admin, Tenant::ADMIN_ROLE);
+
+    $this->actingAs($admin)
+        ->get(route('tenants.invitations.create', $tenant))
+        ->assertDontSee('name="max_uses"', false);
+
+    config(['easy-auth.multi_use_invitations' => true]);
+
+    $this->actingAs($admin)
+        ->get(route('tenants.invitations.create', $tenant))
+        ->assertSee('name="max_uses"', false);
+});
+
+test('the uses count is hidden from the invitation list unless multi-use invitations are enabled', function () {
+    $admin = User::factory()->create(['name' => 'Admin']);
+    $tenant = Tenant::factory()->create();
+    attachTenantMember($tenant, $admin, Tenant::ADMIN_ROLE);
+    Invitation::factory()->for($tenant)->create();
+
+    $this->actingAs($admin)
+        ->get(route('tenants.invitations.index', $tenant))
+        ->assertDontSee(__('easy-auth::invitations.uses_label'));
+
+    config(['easy-auth.multi_use_invitations' => true]);
+
+    $this->actingAs($admin)
+        ->get(route('tenants.invitations.index', $tenant))
+        ->assertSee(__('easy-auth::invitations.uses_label'));
 });
 
 test('members can issue member invitations when member invites are enabled', function () {
@@ -160,6 +212,18 @@ test('only admins can list or revoke invitations regardless of member invites se
     $response->assertForbidden();
 
     expect($invitation->refresh()->isUsed())->toBeFalse();
+});
+
+test('an invitation that is both used and expired shows as used, not expired, in the invitation list', function () {
+    $admin = User::factory()->create(['name' => 'Admin']);
+    $tenant = Tenant::factory()->create();
+    attachTenantMember($tenant, $admin, Tenant::ADMIN_ROLE);
+    Invitation::factory()->for($tenant)->used()->expired()->create();
+
+    $response = $this->actingAs($admin)->get(route('tenants.invitations.index', $tenant));
+
+    $response->assertSee(__('easy-auth::invitations.status_used'));
+    $response->assertDontSee(__('easy-auth::invitations.status_expired'));
 });
 
 test('admin can revoke an invitation', function () {

@@ -25,23 +25,25 @@
         {{ __('easy-auth::invitations.status_label') }}
         @if ($invitation->isRevoked())
             {{ __('easy-auth::invitations.status_revoked') }}
-        @elseif ($invitation->isExpired())
-            {{ __('easy-auth::invitations.status_expired') }}
         @elseif ($invitation->isUsed())
             {{ __('easy-auth::invitations.status_used') }}
+        @elseif ($invitation->isExpired())
+            {{ __('easy-auth::invitations.status_expired') }}
         @else
             {{ __('easy-auth::invitations.status_active') }}
         @endif
     </p>
 
-    <p>
-        {{ __('easy-auth::invitations.uses_label') }}
-        @if ($invitation->max_uses === null)
-            {{ __('easy-auth::invitations.uses_unlimited', ['used' => $invitation->redemptions->count()]) }}
-        @else
-            {{ __('easy-auth::invitations.uses_used_of_max', ['used' => $invitation->redemptions->count(), 'max' => $invitation->max_uses]) }}
-        @endif
-    </p>
+    @if (config('easy-auth.multi_use_invitations'))
+        <p>
+            {{ __('easy-auth::invitations.uses_label') }}
+            @if ($invitation->max_uses === null)
+                {{ __('easy-auth::invitations.uses_unlimited', ['used' => $invitation->redemptions->count()]) }}
+            @else
+                {{ __('easy-auth::invitations.uses_used_of_max', ['used' => $invitation->redemptions->count(), 'max' => $invitation->max_uses]) }}
+            @endif
+        </p>
+    @endif
 
     @if ($invitation->redemptions->isNotEmpty())
         <p class="mt-2">{{ __('easy-auth::invitations.redeemed_by_heading') }}</p>
