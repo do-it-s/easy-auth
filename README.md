@@ -76,12 +76,12 @@ php artisan migrate
 
 ### 7. Frontend (JS)
 
-The passkey registration/sign-in/password-fallback JS in `resources/js/` is packaged as `@do-it-s/easy-auth-js`. Add it to the app's `package.json`:
+The passkey registration/sign-in/password-fallback JS in `resources/js/` is packaged as `@do-it-s/easy-auth-js` and ships pre-bundled (`resources/js/dist/easy-auth.js` — a single ESM file with no unresolved imports, so no separate `npm install` step is needed on the package side). Add it to the app's `package.json`, pointing at the copy that `composer require` already placed in `vendor/`:
 
 ```json
 {
     "dependencies": {
-        "@do-it-s/easy-auth-js": "file:../easy-auth/resources/js"
+        "@do-it-s/easy-auth-js": "file:vendor/do-it-s/easy-auth/resources/js"
     }
 }
 ```
@@ -93,15 +93,6 @@ import { initEasyAuth } from '@do-it-s/easy-auth-js';
 
 initEasyAuth();
 ```
-
-**Note:** A `file:` reference only lands in `node_modules` as a symlink to a directory outside the repo — npm does **not** automatically resolve the `@laravel/passkeys` dependency declared by the link target (`easy-auth/resources/js`) into the app's own `node_modules` (a plain `file:` dependency that isn't an npm workspace does not recurse into dependency resolution when the target lives outside the app's own repo). Since Node/Vite module resolution follows the symlink to its real path and looks for `node_modules` from there, `@laravel/passkeys` must exist **inside `easy-auth/resources/js`'s own `node_modules`**. In other words, run this once on the easy-auth side (or whenever its `package.json` changes):
-
-```
-cd easy-auth/resources/js
-npm install
-```
-
-Forgetting this causes the app's `npm run build`/`npm run dev` to fail with `Failed to resolve import "@laravel/passkeys" from ".../easy-auth/resources/js/index.js"`.
 
 (The app's own JS initialization — Alpine.js, etc. — can happen freely before or after this. `easy-auth-js` has no dependency on Alpine.)
 

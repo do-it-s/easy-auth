@@ -3,8 +3,14 @@
     "version": "0.1.0",
     "private": true,
     "type": "module",
-    "main": "index.js",
+    "main": "dist/easy-auth.js",
+    "scripts": {
+        "build": "esbuild index.js --bundle --format=esm --outfile=dist/easy-auth.js"
+    },
     "dependencies": {
         "@laravel/passkeys": "^0.2.0"
+    },
+    "devDependencies": {
+        "esbuild": "^0.25.0"
     }
 }

@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- `@do-it-s/easy-auth-js` (the passkey/sign-in JS in `resources/js/`) now
+  ships pre-bundled as `resources/js/dist/easy-auth.js` (a single ESM file
+  with no unresolved imports) instead of requiring a separate npm install
+  of `@laravel/passkeys`. Host apps still consume it via a `file:`
+  dependency, now pointing at `vendor/do-it-s/easy-auth/resources/js`
+  (the copy `composer require` already placed) instead of a sibling
+  `../easy-auth` checkout.
+
 ## [0.1.0] - 2026-07-10
 
 First tagged version. Still beta (see the README's Beta Notice) — 0.x

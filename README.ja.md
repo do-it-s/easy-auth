@@ -76,12 +76,12 @@ php artisan migrate
 
 ### 7. フロントエンド(JS)
 
-`resources/js/`にpasskey登録/サインイン/パスワードフォールバックのJSが`@do-it-s/easy-auth-js`としてパッケージ化されている。アプリ側の`package.json`に追加:
+`resources/js/`にpasskey登録/サインイン/パスワードフォールバックのJSが`@do-it-s/easy-auth-js`としてパッケージ化されている。ビルド済み(`resources/js/dist/easy-auth.js`、外部importを含まない単一ESMファイル)として同梱されているため、パッケージ側で別途`npm install`する必要はない。アプリ側の`package.json`には、`composer require`で`vendor/`に配置された実体を指すように追加する:
 
 ```json
 {
     "dependencies": {
-        "@do-it-s/easy-auth-js": "file:../easy-auth/resources/js"
+        "@do-it-s/easy-auth-js": "file:vendor/do-it-s/easy-auth/resources/js"
     }
 }
 ```
@@ -94,16 +94,9 @@ import { initEasyAuth } from '@do-it-s/easy-auth-js';
 initEasyAuth();
 ```
 
-**注意:** `file:`参照はリポジトリ外のディレクトリへのシンボリックリンクとして`node_modules`に入るだけで、npmはリンク先(`easy-auth/resources/js`)が宣言している`@laravel/passkeys`を**アプリ側のnode_modulesに自動で解決してくれない**(npm workspacesではない単純な`file:`依存は、対象が自分のリポジトリ外にあると依存解決を再帰しない)。Node/Viteのモジュール解決はシンボリックリンクの実体パスを辿って`node_modules`を探すため、`@laravel/passkeys`は**`easy-auth/resources/js`自身の`node_modules`に存在している必要がある**。つまりeasy-auth側で一度(またはpackage.json変更ごとに):
-
-```
-cd easy-auth/resources/js
-npm install
-```
-
-を実行しておくこと。これを忘れるとアプリ側の`npm run build`/`npm run dev`が`Failed to resolve import "@laravel/passkeys" from ".../easy-auth/resources/js/index.js"`で失敗する。
-
 (Alpine.js等、アプリ自身のJS初期化はこの前後で好きに行ってよい。easy-auth-jsはAlpineに依存していない。)
+
+Windowsで`file:`依存がsymlink権限エラーになる場合は`.npmrc`に`install-links=true`を追加してコピーインストールに切り替えること。
 
 Windowsで`file:`依存がsymlink権限エラーになる場合は`.npmrc`に`install-links=true`を追加してコピーインストールに切り替えること。
 

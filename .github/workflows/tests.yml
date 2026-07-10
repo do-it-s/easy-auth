@@ -31,3 +31,25 @@ jobs:
 
       - name: Check code style
         run: ./vendor/bin/pint --test
+
+  js-dist:
+    runs-on: ubuntu-latest
+    name: JS dist up to date
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Install dependencies
+        working-directory: resources/js
+        run: npm install
+
+      - name: Build
+        working-directory: resources/js
+        run: npm run build
+
+      - name: Fail if dist/ is stale
+        run: git diff --exit-code -- resources/js/dist
