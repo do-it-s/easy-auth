@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.2.1] - 2026-07-11
+
+### Fixed
+
+- The invitation list's "Revoke" button no longer appears for invitations
+  that have already been fully used (including exhausted multi-use
+  invitations), which previously offered a revoke action that had no
+  meaningful effect.
+
 ## [0.2.0] - 2026-07-10
 
 ### Changed

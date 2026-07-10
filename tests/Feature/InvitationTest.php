@@ -226,6 +226,18 @@ test('an invitation that is both used and expired shows as used, not expired, in
     $response->assertDontSee(__('easy-auth::invitations.status_expired'));
 });
 
+test('a used invitation does not show a revoke button in the invitation list', function () {
+    $admin = User::factory()->create(['name' => 'Admin']);
+    $tenant = Tenant::factory()->create();
+    attachTenantMember($tenant, $admin, Tenant::ADMIN_ROLE);
+    Invitation::factory()->for($tenant)->used()->create();
+
+    $response = $this->actingAs($admin)->get(route('tenants.invitations.index', $tenant));
+
+    $response->assertSee(__('easy-auth::invitations.status_used'));
+    $response->assertDontSee(__('easy-auth::invitations.revoke'));
+});
+
 test('admin can revoke an invitation', function () {
     $admin = User::factory()->create(['name' => 'Admin']);
     $tenant = Tenant::factory()->create();

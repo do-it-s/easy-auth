@@ -55,7 +55,7 @@
     @endif
 
     @can('delete', $invitation)
-        @if (! $invitation->isRevoked() && ! $invitation->isExpired())
+        @if ($invitation->isUsable())
             <form method="POST" action="{{ route('tenants.invitations.destroy', [$tenant, $invitation]) }}" class="mt-2">
                 @csrf
                 @method('DELETE')
