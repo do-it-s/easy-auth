@@ -5,7 +5,17 @@ All notable changes to this package will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [0.2.2] - 2026-07-13
+
+### Added
+
+- `config('easy-auth.custom_invitation_expiration')` (`.env`'s
+  `EASY_AUTH_CUSTOM_INVITATION_EXPIRATION`), mirroring
+  `multi_use_invitations`. Defaults to false: the invitation form's
+  "expires at" field is hidden and every invitation is forced to expire
+  `Invitation::DEFAULT_EXPIRATION_MINUTES` (30 minutes) from creation,
+  regardless of any submitted value. Enable it to let invitation creators
+  set a custom expiry or leave it blank for no expiry at all.
 
 ## [0.2.1] - 2026-07-11
 

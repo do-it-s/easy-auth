@@ -77,6 +77,14 @@ class InvitationController extends Controller
         // every invitation is forced single-use regardless of request input.
         $maxUses = config('easy-auth.multi_use_invitations') ? ($validated['max_uses'] ?? null) : 1;
 
+        // Same pattern for expires_at (see config('easy-auth.custom_invitation_expiration')'s
+        // docblock): a submitted value is only honored while it's enabled;
+        // otherwise every invitation is forced to the fixed default expiry
+        // regardless of request input.
+        $expiresAt = config('easy-auth.custom_invitation_expiration')
+            ? ($validated['expires_at'] ?? null)
+            : now()->addMinutes(Invitation::DEFAULT_EXPIRATION_MINUTES);
+
         $token = Invitation::generateToken();
 
         InvitationCreating::dispatch($tenant, $request->user(), $validated);
@@ -85,7 +93,7 @@ class InvitationController extends Controller
             'role' => $validated['role'],
             'token' => Invitation::hashToken($token),
             'label' => $validated['label'] ?? null,
-            'expires_at' => $validated['expires_at'] ?? null,
+            'expires_at' => $expiresAt,
             'max_uses' => $maxUses,
             'created_by' => $request->user()->id,
         ]);

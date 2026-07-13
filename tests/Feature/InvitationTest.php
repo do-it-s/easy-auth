@@ -46,7 +46,8 @@ test('tenant admin can view and issue invitations', function () {
     expect(Invitation::hashToken($rawToken))->toBe($invitation->token);
 });
 
-test('admin can issue an eternal admin invitation', function () {
+test('admin can issue an eternal admin invitation when custom invitation expiration is enabled', function () {
+    config(['easy-auth.custom_invitation_expiration' => true]);
     $admin = User::factory()->create(['name' => 'Admin']);
     $tenant = Tenant::factory()->create();
     attachTenantMember($tenant, $admin, Tenant::ADMIN_ROLE);
@@ -61,6 +62,40 @@ test('admin can issue an eternal admin invitation', function () {
     $invitation = Invitation::where('tenant_id', $tenant->id)->first();
     expect($invitation->role)->toBe(Tenant::ADMIN_ROLE);
     expect($invitation->expires_at)->toBeNull();
+});
+
+test('a submitted expires_at is ignored and forced to the default when custom invitation expiration is disabled', function () {
+    expect(config('easy-auth.custom_invitation_expiration'))->toBeFalse();
+    $admin = User::factory()->create(['name' => 'Admin']);
+    $tenant = Tenant::factory()->create();
+    attachTenantMember($tenant, $admin, Tenant::ADMIN_ROLE);
+
+    $response = $this->actingAs($admin)->post(route('tenants.invitations.store', $tenant), [
+        'role' => Tenant::MEMBER_ROLE,
+        'expires_at' => now()->addWeek()->format('Y-m-d\TH:i'),
+    ]);
+
+    $response->assertRedirect(route('tenants.invitations.create', $tenant));
+
+    $invitation = Invitation::where('tenant_id', $tenant->id)->first();
+    expect($invitation->expires_at)->not->toBeNull();
+    expect($invitation->expires_at->diffInMinutes(now()))->toBeLessThanOrEqual(Invitation::DEFAULT_EXPIRATION_MINUTES);
+});
+
+test('the expires_at field is hidden from the invitation form unless custom invitation expiration is enabled', function () {
+    $admin = User::factory()->create(['name' => 'Admin']);
+    $tenant = Tenant::factory()->create();
+    attachTenantMember($tenant, $admin, Tenant::ADMIN_ROLE);
+
+    $this->actingAs($admin)
+        ->get(route('tenants.invitations.create', $tenant))
+        ->assertDontSee('name="expires_at"', false);
+
+    config(['easy-auth.custom_invitation_expiration' => true]);
+
+    $this->actingAs($admin)
+        ->get(route('tenants.invitations.create', $tenant))
+        ->assertSee('name="expires_at"', false);
 });
 
 test('admin can issue a reusable invitation with a maximum number of uses when multi-use invitations are enabled', function () {

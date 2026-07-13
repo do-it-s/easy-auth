@@ -46,4 +46,15 @@ return [
     // server-side, regardless of what the request submits).
     'multi_use_invitations' => env('EASY_AUTH_MULTI_USE_INVITATIONS', false),
 
+    // Whether invitation creators may set a custom expiry (or no expiry at
+    // all) instead of the fixed default (Invitation::DEFAULT_EXPIRATION_MINUTES,
+    // currently 30 minutes). Defaults to false: this package's whole premise
+    // is a face-to-face invitation chain that spreads through an organization
+    // in a short window, and a long-lived or non-expiring invitation link
+    // works against that. When disabled, the "expires at" field is hidden
+    // from the invitation form and every invitation is forced to expire
+    // DEFAULT_EXPIRATION_MINUTES from creation (expires_at forced server-side,
+    // regardless of what the request submits).
+    'custom_invitation_expiration' => env('EASY_AUTH_CUSTOM_INVITATION_EXPIRATION', false),
+
 ];
