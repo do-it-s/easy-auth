@@ -5,6 +5,19 @@ All notable changes to this package will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.2.3] - 2026-07-14
+
+### Fixed
+
+- The member list's "Remove" button (`tenants.members.destroy`) submitted
+  immediately without showing the `confirm()` dialog. The confirmation
+  message was rendered with `@json()` inside a double-quoted `onsubmit`
+  attribute, and the JSON string's own double quotes terminated the HTML
+  attribute early, leaving `onsubmit="return confirm("` — invalid
+  JavaScript that browsers silently discard. Switched to `{{ json_encode(...) }}`,
+  which HTML-entity-escapes both `"` and `'` and is safe regardless of the
+  message content or the attribute's quote style.
+
 ## [0.2.2] - 2026-07-13
 
 ### Added

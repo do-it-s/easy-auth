@@ -21,7 +21,7 @@
             @endcan
 
             @can('removeMember', [$tenant, $member])
-                <form method="POST" action="{{ route('tenants.members.destroy', [$tenant, $member]) }}" onsubmit="return confirm(@json(__('easy-auth::members.remove_confirm')))">
+                <form method="POST" action="{{ route('tenants.members.destroy', [$tenant, $member]) }}" onsubmit="return confirm({{ json_encode(__('easy-auth::members.remove_confirm')) }})">
                     @csrf
                     @method('DELETE')
                     <button type="submit" class="inline-block px-5 py-1.5 border border-[#19140035] dark:border-[#3E3E3A] rounded-sm text-sm leading-normal hover:bg-[#19140012] dark:hover:bg-[#eeeeec]/10">
