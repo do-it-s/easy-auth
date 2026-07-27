@@ -4,6 +4,7 @@ namespace DoITs\EasyAuth\Http\Controllers\Auth;
 
 use DoITs\EasyAuth\Http\Controllers\Controller;
 use DoITs\EasyAuth\Notifications\AccountDeletionLinkNotification;
+use DoITs\EasyAuth\Support\AuditLog;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
@@ -41,6 +42,10 @@ class SignInController extends Controller
         $user = Auth::user();
 
         if ($user->device?->uuid !== $request->header('X-Device-Uuid')) {
+            AuditLog::record('auth.device_mismatch', 'failure', [
+                'actor' => AuditLog::describeUser($user),
+            ]);
+
             Auth::logout();
 
             // The password matched, but this device never will: no amount of

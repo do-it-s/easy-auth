@@ -5,6 +5,21 @@ All notable changes to this package will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.2.4] - 2026-07-27
+
+### Added
+
+- Audit log of authentication attempts and tenant/invitation/profile
+  operations, written to a dedicated daily-rotating log channel
+  (`config('easy-auth.audit_log_channel')`, default `easy-auth-audit`;
+  retention via `config('easy-auth.audit_log_retention_days')`, default 30
+  days). Covers password and passkey sign-in (success, bad credentials, and
+  device mismatch), sign-out, passkey registration/verification/deletion,
+  and every operation already covered by this package's `*ed` events
+  (tenant/invitation/member/profile/account changes). Never logs
+  credentials or an attempted-but-wrong email address. See README's new
+  "Audit Log" section.
+
 ## [0.2.3] - 2026-07-14
 
 ### Fixed

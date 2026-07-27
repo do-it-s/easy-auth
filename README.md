@@ -286,6 +286,14 @@ All of this package's view and email copy goes through translation keys under th
 php artisan vendor:publish --tag=easy-auth-lang
 ```
 
+## Audit Log
+
+Every authentication attempt (password and passkey sign-in, sign-out, device mismatches) and every mutating operation from the events table above writes one structured entry to a dedicated log channel, so "who did what, when, with what result" can be reconstructed from disk after the fact — this is what the events table's `*ed` events feed into internally (`DoITs\EasyAuth\Listeners\AuditLogSubscriber`), plus `Illuminate\Auth\Events\Login`/`Failed`/`Logout` and `Laravel\Passkeys\Events\PasskeyRegistered`/`PasskeyVerified`/`PasskeyDeleted` for authentication itself.
+
+The channel (`config('easy-auth.audit_log_channel')`, default `easy-auth-audit`) is registered automatically with a daily-rotating driver — `storage/logs/easy-auth-audit-*.log` — retained for `config('easy-auth.audit_log_retention_days')` days (default 30). There is no in-app viewer; read it directly (`tail -f storage/logs/easy-auth-audit-*.log`, `grep`, etc.), or define a channel of the same name in the app's own `logging.php` to route entries elsewhere (Papertrail, a database sink, whatever the app already uses) instead.
+
+Each line is one JSON-ish log entry with `action` (e.g. `tenant_member.removed`, `auth.login`, `auth.failed`), `outcome` (`success`/`failure`), `actor`/`target` (`{id, name}`, when known), `tenant`, `ip`, `user_agent`, and `device_uuid`. Entries never include credentials or an attempted-but-wrong email address — `auth.failed` (bad credentials) and `auth.device_mismatch` (a correct password from a device the account isn't bound to) record only the outcome and request metadata, the same "don't confirm whether an email exists" posture `SignInController`'s generic `sign_in_failed` message already takes.
+
 ## Known Limitations and Future Considerations
 
 - The `EnsureProfileIsComplete` middleware determines profile completeness solely from `$user->name === ''`. If the app adds its own required profile fields (e.g. a phone number), this middleware is unaware of them and lets the request through regardless.

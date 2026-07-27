@@ -57,4 +57,18 @@ return [
     // regardless of what the request submits).
     'custom_invitation_expiration' => env('EASY_AUTH_CUSTOM_INVITATION_EXPIRATION', false),
 
+    // Audit log of authentication attempts and tenant/invitation/profile
+    // operations, written via a dedicated daily-rotating log channel
+    // (EasyAuthServiceProvider registers it automatically unless the host
+    // app already defines a channel of this name in its own logging.php).
+    // Read directly with tail/grep; there is no in-app viewer. Entries never
+    // include credentials or attempted email addresses — only IDs, names,
+    // and outcomes — since this is disk-persisted independently of the
+    // database rows it describes.
+    'audit_log_channel' => env('EASY_AUTH_AUDIT_LOG_CHANNEL', 'easy-auth-audit'),
+
+    // Days of daily audit log files to retain before Laravel's daily driver
+    // prunes them.
+    'audit_log_retention_days' => env('EASY_AUTH_AUDIT_LOG_RETENTION_DAYS', 30),
+
 ];

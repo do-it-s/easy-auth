@@ -3,18 +3,22 @@
 namespace DoITs\EasyAuth;
 
 use DoITs\EasyAuth\Actions\GenerateRegistrationOptions;
+use DoITs\EasyAuth\Actions\VerifyPasskey;
 use DoITs\EasyAuth\Contracts\EasyAuthUser;
 use DoITs\EasyAuth\Http\Middleware\EnsureProfileIsComplete;
+use DoITs\EasyAuth\Listeners\AuditLogSubscriber;
 use DoITs\EasyAuth\Models\Invitation;
 use DoITs\EasyAuth\Models\Tenant;
 use DoITs\EasyAuth\Policies\InvitationPolicy;
 use DoITs\EasyAuth\Policies\TenantPolicy;
 use DoITs\EasyAuth\Policies\UserPolicy;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\ServiceProvider;
 use Laravel\Passkeys\Actions\GenerateRegistrationOptions as BaseGenerateRegistrationOptions;
+use Laravel\Passkeys\Actions\VerifyPasskey as BaseVerifyPasskey;
 use Laravel\Passkeys\Passkeys;
 
 class EasyAuthServiceProvider extends ServiceProvider
@@ -30,6 +34,27 @@ class EasyAuthServiceProvider extends ServiceProvider
         // config('easy-auth.force_platform_authenticator'). See that class's
         // docblock for why this is opt-in.
         $this->app->bind(BaseGenerateRegistrationOptions::class, GenerateRegistrationOptions::class);
+
+        // Wraps the vendor action to write a passkey.verification_failed
+        // audit log entry before rethrowing. See VerifyPasskey's docblock
+        // for why a reportable() exception hook can't reach this instead.
+        $this->app->bind(BaseVerifyPasskey::class, VerifyPasskey::class);
+
+        // Registers the audit log's channel unless the host app already
+        // defined one of this name itself, e.g. to point it somewhere other
+        // than local disk. Config, not a published stub, since this way a
+        // host app that never touches logging.php still gets a working
+        // channel out of the box.
+        $channel = config('easy-auth.audit_log_channel');
+
+        if (! config()->has("logging.channels.{$channel}")) {
+            config(["logging.channels.{$channel}" => [
+                'driver' => 'daily',
+                'path' => storage_path("logs/{$channel}.log"),
+                'level' => 'info',
+                'days' => config('easy-auth.audit_log_retention_days'),
+            ]]);
+        }
     }
 
     /**
@@ -94,5 +119,7 @@ class EasyAuthServiceProvider extends ServiceProvider
         Gate::policy(Tenant::class, TenantPolicy::class);
         Gate::policy(Invitation::class, InvitationPolicy::class);
         Gate::policy(config('auth.providers.users.model'), UserPolicy::class);
+
+        Event::subscribe(AuditLogSubscriber::class);
     }
 }
