@@ -71,4 +71,15 @@ return [
     // prunes them.
     'audit_log_retention_days' => env('EASY_AUTH_AUDIT_LOG_RETENTION_DAYS', 30),
 
+    // The single user ID treated as this package's system administrator,
+    // consulted by isSysAdmin() (Contracts\EasyAuthUser). Deliberately not
+    // matched by email: most easy-auth accounts are passkey-only and never
+    // set one, so an email-based check would miss the majority of accounts.
+    // Also deliberately a single ID rather than a list: there is no current
+    // need for more than one system administrator at a time. Defaults to
+    // null (no system administrator). Set via .env, since the ID is
+    // specific to each service's own database, not something this config
+    // file's defaults could sensibly guess.
+    'sysadmin_user_id' => env('EASY_AUTH_SYSADMIN_USER_ID'),
+
 ];

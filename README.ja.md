@@ -286,6 +286,12 @@ public function register(): void
 php artisan vendor:publish --tag=easy-auth-lang
 ```
 
+## システム管理者
+
+かんたん認証は、単一のシステム管理者ユーザーをIDで(emailではなく)識別できる(`config('easy-auth.sysadmin_user_id')`、`.env`の`EASY_AUTH_SYSADMIN_USER_ID`)。かんたん認証のアカウントの大半はパスキーのみでemailを設定しないため。デフォルトは`null`(システム管理者なし)で、対応するのは単一IDのみ(現時点で複数人同時に必要になる要件は無い)。
+
+現段階でパッケージが提供するのは判定用のプリミティブ`Contracts\EasyAuthUser::isSysAdmin(): bool`(`Concerns\IsEasyAuthUser`で実装)のみであり、これ単体ではテナントやパッケージ機能への特別なアクセス権をこのユーザーに付与しない。ホストアプリはすでに`isSysAdmin()`を使って自前のアプリ固有の管理機能(全体通知の一斉配信など)を制御できる。テナント横断アクセス(実際のメンバーシップ行なしに任意のテナントのメンバー/管理者として振る舞えるようにする機能)は計画中だが未実装。
+
 ## 既知の制限・将来の検討事項
 
 - `EnsureProfileIsComplete`ミドルウェアは`$user->name === ''`のみでプロフィール完了を判定する。アプリが独自の必須プロフィール項目(電話番号等)を追加しても、このミドルウェアは関知せず素通りしてしまう。

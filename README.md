@@ -294,6 +294,12 @@ The channel (`config('easy-auth.audit_log_channel')`, default `easy-auth-audit`)
 
 Each line is one JSON-ish log entry with `action` (e.g. `tenant_member.removed`, `auth.login`, `auth.failed`), `outcome` (`success`/`failure`), `actor`/`target` (`{id, name}`, when known), `tenant`, `ip`, `user_agent`, and `device_uuid`. Entries never include credentials or an attempted-but-wrong email address — `auth.failed` (bad credentials) and `auth.device_mismatch` (a correct password from a device the account isn't bound to) record only the outcome and request metadata, the same "don't confirm whether an email exists" posture `SignInController`'s generic `sign_in_failed` message already takes.
 
+## System Administrator
+
+easy-auth can recognize a single system-administrator user, identified by ID rather than email (`config('easy-auth.sysadmin_user_id')`, `.env`'s `EASY_AUTH_SYSADMIN_USER_ID`), since most easy-auth accounts are passkey-only and never set an email. It defaults to `null` (no system administrator), and only a single ID is supported — there is no current need for more than one at a time.
+
+At this stage the package only provides the identification primitive, `Contracts\EasyAuthUser::isSysAdmin(): bool` (implemented in `Concerns\IsEasyAuthUser`); it does not yet grant this user any special access to tenants or package features on its own. Host apps can already use `isSysAdmin()` to gate their own app-specific administrative features (e.g. a global notification broadcast). Cross-tenant access (letting the system administrator view and act as a member/admin of any tenant without an actual membership row) is planned but not yet implemented.
+
 ## Known Limitations and Future Considerations
 
 - The `EnsureProfileIsComplete` middleware determines profile completeness solely from `$user->name === ''`. If the app adds its own required profile fields (e.g. a phone number), this middleware is unaware of them and lets the request through regardless.

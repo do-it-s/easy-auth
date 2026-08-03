@@ -34,4 +34,10 @@ interface EasyAuthUser extends PasskeyUser
      * The tenant the user most recently accessed, if any.
      */
     public function currentTenant(): ?Tenant;
+
+    /**
+     * Whether this user is this package's system administrator, per
+     * config('easy-auth.sysadmin_user_id').
+     */
+    public function isSysAdmin(): bool;
 }

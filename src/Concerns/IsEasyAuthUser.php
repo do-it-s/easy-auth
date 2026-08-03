@@ -92,4 +92,15 @@ trait IsEasyAuthUser
             ->orderByPivot('last_accessed_at', 'desc')
             ->first();
     }
+
+    /**
+     * Whether this user is this package's system administrator, per
+     * config('easy-auth.sysadmin_user_id').
+     */
+    public function isSysAdmin(): bool
+    {
+        $sysadminUserId = config('easy-auth.sysadmin_user_id');
+
+        return $sysadminUserId !== null && (int) $sysadminUserId === (int) $this->getAuthIdentifier();
+    }
 }
