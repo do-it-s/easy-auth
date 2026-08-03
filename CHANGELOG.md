@@ -5,6 +5,20 @@ All notable changes to this package will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.2.5] - 2026-08-03
+
+### Added
+
+- A system-administrator identification primitive: `config('easy-auth.sysadmin_user_id')`
+  (`.env`'s `EASY_AUTH_SYSADMIN_USER_ID`, a single user ID, default `null`)
+  and `Contracts\EasyAuthUser::isSysAdmin(): bool` (implemented in
+  `Concerns\IsEasyAuthUser`). Identifies by ID rather than email, since
+  most easy-auth accounts are passkey-only and never set one. This is
+  phase 1 of a larger system-administrator feature — it does not yet
+  grant any special tenant access on its own; host apps can already use
+  `isSysAdmin()` to gate their own app-specific administrative features.
+  See README's new "System Administrator" section.
+
 ## [0.2.4] - 2026-07-27
 
 ### Added
