@@ -93,6 +93,28 @@ test('member list paginates the non-admin section independently when configured'
     $response->assertViewHas('admins', fn ($admins) => $admins->count() === 1 && $admins->total() === 1);
 });
 
+test('paging one member list section preserves the other section\'s current page in its links', function () {
+    config(['easy-auth.members_admins_per_page' => 1, 'easy-auth.members_others_per_page' => 1]);
+    $admin1 = User::factory()->create();
+    $admin2 = User::factory()->create();
+    $tenant = Tenant::factory()->create();
+    $tenant->users()->attach($admin1, ['role' => Tenant::ADMIN_ROLE, 'last_accessed_at' => now()]);
+    $tenant->users()->attach($admin2, ['role' => Tenant::ADMIN_ROLE, 'last_accessed_at' => now()]);
+    foreach (User::factory()->count(2)->create() as $member) {
+        $tenant->users()->attach($member, ['role' => Tenant::MEMBER_ROLE, 'last_accessed_at' => now()]);
+    }
+
+    $response = $this->actingAs($admin1)->get(
+        route('tenants.members.index', $tenant).'?admins_page=2&others_page=2'
+    );
+
+    // Both sections are on page 2; each section's own pagination links must
+    // carry the other section's page number forward, or navigating one
+    // section resets the other back to page 1 (the bug this test guards).
+    $response->assertSee('others_page=2', false);
+    $response->assertSee('admins_page=2', false);
+});
+
 test('member row shows promote and remove buttons for a member visible to an admin', function () {
     $admin = User::factory()->create(['name' => 'Admin']);
     $member = User::factory()->create(['name' => 'Taro']);

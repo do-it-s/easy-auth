@@ -28,7 +28,7 @@ class TenantMemberController extends Controller
             ->paginate(
                 config('easy-auth.members_admins_per_page') ?? PHP_INT_MAX,
                 pageName: 'admins_page'
-            );
+            )->withQueryString();
 
         $others = $tenant->users()
             ->wherePivot('role', Tenant::MEMBER_ROLE)
@@ -36,7 +36,7 @@ class TenantMemberController extends Controller
             ->paginate(
                 config('easy-auth.members_others_per_page') ?? PHP_INT_MAX,
                 pageName: 'others_page'
-            );
+            )->withQueryString();
 
         return view('easy-auth::tenants.members.index', [
             'tenant' => $tenant,
