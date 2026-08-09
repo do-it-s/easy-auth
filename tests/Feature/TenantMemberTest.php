@@ -51,6 +51,48 @@ test('member list shows admins in the first section and others in the second', f
     $response->assertSeeInOrder(['Hanako', 'Taro']);
 });
 
+test('member list is not paginated by default', function () {
+    $admin = User::factory()->create();
+    $tenant = Tenant::factory()->create();
+    $tenant->users()->attach($admin, ['role' => Tenant::ADMIN_ROLE, 'last_accessed_at' => now()]);
+    foreach (User::factory()->count(3)->create() as $member) {
+        $tenant->users()->attach($member, ['role' => Tenant::MEMBER_ROLE, 'last_accessed_at' => now()]);
+    }
+
+    $response = $this->actingAs($admin)->get(route('tenants.members.index', $tenant));
+
+    $response->assertViewHas('others', fn ($others) => $others->count() === 3);
+});
+
+test('member list paginates the admin section independently when configured', function () {
+    config(['easy-auth.members_admins_per_page' => 1]);
+    $admin1 = User::factory()->create();
+    $admin2 = User::factory()->create();
+    $tenant = Tenant::factory()->create();
+    $tenant->users()->attach($admin1, ['role' => Tenant::ADMIN_ROLE, 'last_accessed_at' => now()]);
+    $tenant->users()->attach($admin2, ['role' => Tenant::ADMIN_ROLE, 'last_accessed_at' => now()]);
+
+    $response = $this->actingAs($admin1)->get(route('tenants.members.index', $tenant));
+
+    $response->assertViewHas('admins', fn ($admins) => $admins->count() === 1 && $admins->total() === 2);
+    $response->assertViewHas('adminCount', 2);
+});
+
+test('member list paginates the non-admin section independently when configured', function () {
+    config(['easy-auth.members_others_per_page' => 1]);
+    $admin = User::factory()->create();
+    $tenant = Tenant::factory()->create();
+    $tenant->users()->attach($admin, ['role' => Tenant::ADMIN_ROLE, 'last_accessed_at' => now()]);
+    foreach (User::factory()->count(2)->create() as $member) {
+        $tenant->users()->attach($member, ['role' => Tenant::MEMBER_ROLE, 'last_accessed_at' => now()]);
+    }
+
+    $response = $this->actingAs($admin)->get(route('tenants.members.index', $tenant));
+
+    $response->assertViewHas('others', fn ($others) => $others->count() === 1 && $others->total() === 2);
+    $response->assertViewHas('admins', fn ($admins) => $admins->count() === 1 && $admins->total() === 1);
+});
+
 test('member row shows promote and remove buttons for a member visible to an admin', function () {
     $admin = User::factory()->create(['name' => 'Admin']);
     $member = User::factory()->create(['name' => 'Taro']);

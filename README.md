@@ -300,6 +300,10 @@ easy-auth can recognize a single system-administrator user, identified by ID rat
 
 At this stage the package only provides the identification primitive, `Contracts\EasyAuthUser::isSysAdmin(): bool` (implemented in `Concerns\IsEasyAuthUser`); it does not yet grant this user any special access to tenants or package features on its own. Host apps can already use `isSysAdmin()` to gate their own app-specific administrative features (e.g. a global notification broadcast). Cross-tenant access (letting the system administrator view and act as a member/admin of any tenant without an actual membership row) is planned but not yet implemented.
 
+## Pagination
+
+The tenant member list and invitation list query all matching rows and render them on a single page by default, unchanged from earlier versions. Each of the three sections it can be broken into — the member list's admin section, its non-admin ("other members") section, and the invitation list — has its own independent page-size setting: `config('easy-auth.members_admins_per_page')`, `config('easy-auth.members_others_per_page')`, and `config('easy-auth.invitations_per_page')` (`.env`'s `EASY_AUTH_MEMBERS_ADMINS_PER_PAGE`, `EASY_AUTH_MEMBERS_OTHERS_PER_PAGE`, `EASY_AUTH_INVITATIONS_PER_PAGE`), each defaulting to `null` (no limit). Setting one to an integer turns on Laravel's standard pagination for that section, including its default `links()` markup in the bundled views. Apps that want their own pager UI instead of the bundled one can override the relevant view (see "Customizing views" above) and call `->links()` (or their own component) on the `LengthAwarePaginator` themselves.
+
 ## Known Limitations and Future Considerations
 
 - The `EnsureProfileIsComplete` middleware determines profile completeness solely from `$user->name === ''`. If the app adds its own required profile fields (e.g. a phone number), this middleware is unaware of them and lets the request through regardless.

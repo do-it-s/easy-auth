@@ -71,6 +71,17 @@ return [
     // prunes them.
     'audit_log_retention_days' => env('EASY_AUTH_AUDIT_LOG_RETENTION_DAYS', 30),
 
+    // Page sizes for the tenant member list's admin/member sections and the
+    // invitation list. Each defaults to null, which is treated as "no limit"
+    // (PHP_INT_MAX is passed to paginate()) so an app that never sets these
+    // keeps seeing today's single-page, un-paginated list. Set an integer to
+    // turn pagination on for that list. The member list's admin and member
+    // sections are paginated independently (an org with many admins doesn't
+    // imply many members, or vice versa), so they get separate knobs.
+    'members_admins_per_page' => env('EASY_AUTH_MEMBERS_ADMINS_PER_PAGE'),
+    'members_others_per_page' => env('EASY_AUTH_MEMBERS_OTHERS_PER_PAGE'),
+    'invitations_per_page' => env('EASY_AUTH_INVITATIONS_PER_PAGE'),
+
     // The single user ID treated as this package's system administrator,
     // consulted by isSysAdmin() (Contracts\EasyAuthUser). Deliberately not
     // matched by email: most easy-auth accounts are passkey-only and never

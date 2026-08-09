@@ -182,6 +182,29 @@ test('the uses count is hidden from the invitation list unless multi-use invitat
         ->assertSee(__('easy-auth::invitations.uses_label'));
 });
 
+test('invitation list is not paginated by default', function () {
+    $admin = User::factory()->create();
+    $tenant = Tenant::factory()->create();
+    attachTenantMember($tenant, $admin, Tenant::ADMIN_ROLE);
+    Invitation::factory()->for($tenant)->count(3)->create();
+
+    $response = $this->actingAs($admin)->get(route('tenants.invitations.index', $tenant));
+
+    $response->assertViewHas('invitations', fn ($invitations) => $invitations->count() === 3);
+});
+
+test('invitation list paginates when configured', function () {
+    config(['easy-auth.invitations_per_page' => 2]);
+    $admin = User::factory()->create();
+    $tenant = Tenant::factory()->create();
+    attachTenantMember($tenant, $admin, Tenant::ADMIN_ROLE);
+    Invitation::factory()->for($tenant)->count(3)->create();
+
+    $response = $this->actingAs($admin)->get(route('tenants.invitations.index', $tenant));
+
+    $response->assertViewHas('invitations', fn ($invitations) => $invitations->count() === 2 && $invitations->total() === 3);
+});
+
 test('members can issue member invitations when member invites are enabled', function () {
     $member = User::factory()->create(['name' => 'Member']);
     $tenant = Tenant::factory()->create(['member_invites_enabled' => true]);

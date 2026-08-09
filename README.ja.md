@@ -292,6 +292,10 @@ php artisan vendor:publish --tag=easy-auth-lang
 
 現段階でパッケージが提供するのは判定用のプリミティブ`Contracts\EasyAuthUser::isSysAdmin(): bool`(`Concerns\IsEasyAuthUser`で実装)のみであり、これ単体ではテナントやパッケージ機能への特別なアクセス権をこのユーザーに付与しない。ホストアプリはすでに`isSysAdmin()`を使って自前のアプリ固有の管理機能(全体通知の一斉配信など)を制御できる。テナント横断アクセス(実際のメンバーシップ行なしに任意のテナントのメンバー/管理者として振る舞えるようにする機能)は計画中だが未実装。
 
+## ページング
+
+テナントのメンバー一覧・招待一覧は、これまで通りデフォルトでは全件を1ページにまとめて取得・表示する。分割し得る3つのセクション — メンバー一覧の管理者セクション、それ以外(一般メンバー)セクション、招待一覧 — にはそれぞれ独立した1ページあたりの件数設定があり、`config('easy-auth.members_admins_per_page')`・`config('easy-auth.members_others_per_page')`・`config('easy-auth.invitations_per_page')`(`.env`の`EASY_AUTH_MEMBERS_ADMINS_PER_PAGE`・`EASY_AUTH_MEMBERS_OTHERS_PER_PAGE`・`EASY_AUTH_INVITATIONS_PER_PAGE`)、いずれもデフォルトは`null`(上限なし)。整数を設定するとそのセクションでLaravel標準のページングが有効になり、同梱ビューにもデフォルトの`links()`が表示される。同梱のページャーUIではなく自前のものを使いたいアプリは、該当ビューをオーバーライド(上記「ビューのカスタマイズ」参照)して`LengthAwarePaginator`に対して`->links()`(または自前のコンポーネント)を呼べばよい。
+
 ## 既知の制限・将来の検討事項
 
 - `EnsureProfileIsComplete`ミドルウェアは`$user->name === ''`のみでプロフィール完了を判定する。アプリが独自の必須プロフィール項目(電話番号等)を追加しても、このミドルウェアは関知せず素通りしてしまう。

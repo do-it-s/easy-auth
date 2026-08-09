@@ -19,6 +19,7 @@
     @empty
         <p class="mb-2 text-sm text-[#706f6c] dark:text-[#A1A09A]">{{ __('easy-auth::members.no_admins') }}</p>
     @endforelse
+    {{ $admins->links() }}
 
     <h2 class="mt-4 mb-2 text-sm font-semibold text-[#706f6c] dark:text-[#A1A09A] uppercase tracking-wide">{{ __('easy-auth::members.members_heading') }}</h2>
 
@@ -31,4 +32,5 @@
     @empty
         <p class="mb-2 text-sm text-[#706f6c] dark:text-[#A1A09A]">{{ __('easy-auth::members.no_members') }}</p>
     @endforelse
+    {{ $others->links() }}
 </div>

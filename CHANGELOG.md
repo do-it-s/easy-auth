@@ -5,6 +5,19 @@ All notable changes to this package will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.2.6] - 2026-08-10
+
+### Added
+
+- Pagination for the tenant member list (admin and non-admin sections,
+  independently) and the invitation list, via `config('easy-auth.members_admins_per_page')`,
+  `config('easy-auth.members_others_per_page')`, and `config('easy-auth.invitations_per_page')`
+  (`.env`'s `EASY_AUTH_MEMBERS_ADMINS_PER_PAGE`, `EASY_AUTH_MEMBERS_OTHERS_PER_PAGE`,
+  `EASY_AUTH_INVITATIONS_PER_PAGE`), each defaulting to `null` (no limit,
+  matching prior versions' single-page behavior). Bundled views render
+  Laravel's default `links()` markup when a limit is configured. See
+  README's new "Pagination" section.
+
 ## [0.2.5] - 2026-08-03
 
 ### Added

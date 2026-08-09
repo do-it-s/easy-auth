@@ -22,16 +22,27 @@ class TenantMemberController extends Controller
     {
         $this->authorize('viewAnyMember', $tenant);
 
-        [$admins, $others] = $tenant->users()
+        $admins = $tenant->users()
+            ->wherePivot('role', Tenant::ADMIN_ROLE)
             ->orderByPivot('created_at')
-            ->get()
-            ->partition(fn ($member) => $member->pivot->role === Tenant::ADMIN_ROLE);
+            ->paginate(
+                config('easy-auth.members_admins_per_page') ?? PHP_INT_MAX,
+                pageName: 'admins_page'
+            );
+
+        $others = $tenant->users()
+            ->wherePivot('role', Tenant::MEMBER_ROLE)
+            ->orderByPivot('created_at')
+            ->paginate(
+                config('easy-auth.members_others_per_page') ?? PHP_INT_MAX,
+                pageName: 'others_page'
+            );
 
         return view('easy-auth::tenants.members.index', [
             'tenant' => $tenant,
             'admins' => $admins,
             'others' => $others,
-            'adminCount' => $admins->count(),
+            'adminCount' => $admins->total(),
         ]);
     }
 

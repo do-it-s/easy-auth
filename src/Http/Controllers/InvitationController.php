@@ -29,7 +29,7 @@ class InvitationController extends Controller
                 ->where('is_backup_code', false)
                 ->with('redemptions.user')
                 ->latest()
-                ->get(),
+                ->paginate(config('easy-auth.invitations_per_page') ?? PHP_INT_MAX),
         ]);
     }
 

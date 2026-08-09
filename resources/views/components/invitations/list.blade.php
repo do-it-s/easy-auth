@@ -8,4 +8,5 @@
     @empty
         <p class="text-sm">{{ __('easy-auth::invitations.none_yet') }}</p>
     @endforelse
+    {{ $invitations->links() }}
 </div>

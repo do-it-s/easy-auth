@@ -33,3 +33,6 @@ composer.lock
 
 # Generated
 _ide_helper.php
+
+# Miscellaneous
+/link-shared-memory.ps1
