@@ -5,6 +5,19 @@ All notable changes to this package will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.2.9] - 2026-08-21
+
+### Fixed
+
+- `resources/js/dist/easy-auth.js` (the bundled JS shipped to consumers via
+  `composer require`) was committed to `v0.2.8` without being rebuilt after
+  `index.js` gained `attemptPwaResync()`, so the PWA re-sync feature added
+  in that release shipped without its JS half and never fired. Rebuilt the
+  bundle to include it.
+- A Pint style violation (`single_line_empty_body`) in
+  `PasskeyLoginResponse.php` that had been slipping the local pre-commit
+  workflow and failing CI.
+
 ## [0.2.8] - 2026-08-20
 
 ### Added

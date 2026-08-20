@@ -670,6 +670,24 @@ async function attemptSignIn() {
     return { outcome: "failure" };
   }
 }
+async function attemptPwaResync() {
+  if (localStorage.getItem("device_uuid")) {
+    return { redirect: "/" };
+  }
+  if (localStorage.getItem("auth_method") === "password" || !P.isSupported()) {
+    return { redirect: "/" };
+  }
+  try {
+    const result = await P.verify();
+    if (result.device_uuid) {
+      localStorage.setItem("device_uuid", result.device_uuid);
+    }
+    return { redirect: result.redirect ?? "/" };
+  } catch (error) {
+    console.error(error);
+    return { redirect: "/" };
+  }
+}
 function getDeviceCredentials() {
   return {
     device_uuid: localStorage.getItem("device_uuid"),
@@ -903,8 +921,14 @@ function initEasyAuth({ onStatus } = {}) {
   if (document.getElementById("account-deleted-page")) {
     clearDeviceCredentials();
   }
+  if (document.getElementById("pwa-resync-page")) {
+    attemptPwaResync().then(({ redirect }) => {
+      window.location.href = redirect;
+    });
+  }
 }
 export {
+  attemptPwaResync,
   attemptSignIn,
   canAttemptSignIn,
   clearDeviceCredentials,

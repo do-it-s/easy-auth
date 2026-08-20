@@ -19,9 +19,7 @@ use Symfony\Component\HttpFoundation\Response;
  */
 class PasskeyLoginResponse implements PasskeyLoginResponseContract
 {
-    public function __construct(private readonly PasskeyLoginResponseContract $base)
-    {
-    }
+    public function __construct(private readonly PasskeyLoginResponseContract $base) {}
 
     /**
      * @param  Request  $request
