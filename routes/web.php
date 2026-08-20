@@ -2,6 +2,7 @@
 
 use DoITs\EasyAuth\Http\Controllers\Auth\AccountDeletionController;
 use DoITs\EasyAuth\Http\Controllers\Auth\PasswordResetController;
+use DoITs\EasyAuth\Http\Controllers\Auth\PwaResyncController;
 use DoITs\EasyAuth\Http\Controllers\Auth\RegisterController;
 use DoITs\EasyAuth\Http\Controllers\Auth\SignInController;
 use DoITs\EasyAuth\Http\Controllers\Auth\SignOutController;
@@ -19,6 +20,10 @@ Route::view('/device/reset', 'easy-auth::device.reset')->name('device.reset');
 Route::view('/account-deletion/deleted', 'easy-auth::auth.account-deleted')->name('account-deletion.deleted');
 
 Route::post('/logout', SignOutController::class)->middleware('auth')->name('logout');
+
+if ($pwaResyncPath = config('easy-auth.pwa_resync_path')) {
+    Route::get($pwaResyncPath, [PwaResyncController::class, 'show'])->name('pwa.resync');
+}
 
 Route::middleware(array_filter(['guest', config('passkeys.throttle')]))->group(function () {
     Route::get('/profile/create', [ProfileController::class, 'create'])->name('profile.create');

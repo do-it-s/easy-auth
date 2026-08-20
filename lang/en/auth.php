@@ -9,4 +9,5 @@ return [
     'forgot_password_link' => 'Forgot your password?',
     'sign_in_request_failed' => 'Failed to sign in.',
     'network_error' => 'Could not reach the server. Please check your connection and try again.',
+    'pwa_resync_in_progress' => 'Signing you in…',
 ];

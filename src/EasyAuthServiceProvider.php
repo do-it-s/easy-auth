@@ -6,6 +6,7 @@ use DoITs\EasyAuth\Actions\GenerateRegistrationOptions;
 use DoITs\EasyAuth\Actions\VerifyPasskey;
 use DoITs\EasyAuth\Contracts\EasyAuthUser;
 use DoITs\EasyAuth\Http\Middleware\EnsureProfileIsComplete;
+use DoITs\EasyAuth\Http\Responses\PasskeyLoginResponse as EasyAuthPasskeyLoginResponse;
 use DoITs\EasyAuth\Listeners\AuditLogSubscriber;
 use DoITs\EasyAuth\Models\Invitation;
 use DoITs\EasyAuth\Models\Tenant;
@@ -19,6 +20,7 @@ use Illuminate\Support\Facades\Route;
 use Illuminate\Support\ServiceProvider;
 use Laravel\Passkeys\Actions\GenerateRegistrationOptions as BaseGenerateRegistrationOptions;
 use Laravel\Passkeys\Actions\VerifyPasskey as BaseVerifyPasskey;
+use Laravel\Passkeys\Contracts\PasskeyLoginResponse as PasskeyLoginResponseContract;
 use Laravel\Passkeys\Passkeys;
 
 class EasyAuthServiceProvider extends ServiceProvider
@@ -39,6 +41,17 @@ class EasyAuthServiceProvider extends ServiceProvider
         // audit log entry before rethrowing. See VerifyPasskey's docblock
         // for why a reportable() exception hook can't reach this instead.
         $this->app->bind(BaseVerifyPasskey::class, VerifyPasskey::class);
+
+        // Decorates the vendor login response so a PWA re-sync (see
+        // config('easy-auth.pwa_resync_path')) can hand its restored
+        // device_uuid back to the client. extend() rather than a direct
+        // bind() override of the contract, since PasskeysServiceProvider
+        // binds it as a singleton too and extend() decorates whatever's
+        // there regardless of provider registration order.
+        $this->app->extend(
+            PasskeyLoginResponseContract::class,
+            fn (PasskeyLoginResponseContract $response) => new EasyAuthPasskeyLoginResponse($response)
+        );
 
         // Registers the audit log's channel unless the host app already
         // defined one of this name itself, e.g. to point it somewhere other
@@ -113,7 +126,30 @@ class EasyAuthServiceProvider extends ServiceProvider
                 $request->merge(['remember' => true]);
             }
 
-            return $user->device?->uuid === $request->header('X-Device-Uuid');
+            $deviceUuid = $user->device?->uuid;
+
+            if ($deviceUuid === $request->header('X-Device-Uuid')) {
+                return true;
+            }
+
+            // A home-screen PWA's localStorage is isolated from Safari's,
+            // so a freshly-opened PWA sends no X-Device-Uuid header at all
+            // rather than a mismatched one — this branch is for that
+            // specific case, not a general relaxation of the check above.
+            // Trusted only once per session (pull() consumes the flag),
+            // and only because the session already proved, by reaching
+            // config('easy-auth.pwa_resync_path')'s controller, that this
+            // browsing context knows that unguessable URL. Leaves the
+            // mismatch branch (SignInController::store()'s forced logout +
+            // account-deletion email) and normal /login attempts
+            // completely untouched: neither of those ever sets this flag.
+            if ($deviceUuid && ! $request->header('X-Device-Uuid') && $request->session()->pull('pwa_resync_allowed')) {
+                $request->session()->put('pwa_resync_device_uuid', $deviceUuid);
+
+                return true;
+            }
+
+            return false;
         });
 
         Gate::policy(Tenant::class, TenantPolicy::class);

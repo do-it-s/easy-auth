@@ -5,6 +5,19 @@ All notable changes to this package will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.2.8] - 2026-08-20
+
+### Added
+
+- A PWA re-sync route for home-screen-installed apps whose isolated
+  `localStorage` never received the device_uuid Safari holds, via
+  `config('easy-auth.pwa_resync_path')` (`.env`'s `EASY_AUTH_PWA_RESYNC_PATH`,
+  default `null`, no package-provided default value). Point a PWA
+  manifest's `start_url` at this app-chosen unguessable path to have it
+  silently re-establish the device's existing device_uuid via a passkey
+  ceremony on first open. See README's new "PWA (Home Screen) Sign-In"
+  section.
+
 ## [0.2.7] - 2026-08-10
 
 ### Fixed

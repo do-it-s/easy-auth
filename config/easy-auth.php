@@ -93,4 +93,20 @@ return [
     // file's defaults could sensibly guess.
     'sysadmin_user_id' => env('EASY_AUTH_SYSADMIN_USER_ID'),
 
+    // An unguessable path (e.g. a long random string) this package will
+    // register a GET route on to re-establish a signed-in-elsewhere user's
+    // device_uuid in a browsing context whose localStorage never received
+    // it — chiefly a home-screen PWA on iOS/iPadOS, whose storage is
+    // isolated from Safari's even though its manifest.json's start_url can
+    // point anywhere on the same origin. Visiting this path attempts a
+    // passkey ceremony and silently redirects to the app regardless of
+    // outcome; success re-stores the device's existing UUID into
+    // localStorage without a fresh registration. Defaults to null (feature
+    // off, no route registered). Deliberately has no package-side default
+    // value: a path shipped in this package's public source would not be
+    // unguessable for any app using the default, defeating the point.
+    // Each app must set its own random value via .env. See README's PWA
+    // section.
+    'pwa_resync_path' => env('EASY_AUTH_PWA_RESYNC_PATH'),
+
 ];

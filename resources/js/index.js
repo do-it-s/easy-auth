@@ -64,6 +64,42 @@ export async function attemptSignIn() {
 }
 
 /**
+ * Called once, automatically, by initEasyAuth() when this package's own
+ * pwa-resync page (config('easy-auth.pwa_resync_path')) is rendered — a
+ * home-screen PWA's localStorage never received the device_uuid Safari
+ * holds, since the two are isolated storage areas even on the same origin.
+ * Silently re-establishes it via a passkey ceremony when possible; the
+ * caller always redirects afterwards regardless of outcome, since this
+ * page has no visible result to report by design (a failed attempt just
+ * means the visitor lands on the normal guest experience at `redirect`).
+ */
+export async function attemptPwaResync() {
+    if (localStorage.getItem('device_uuid')) {
+        return { redirect: '/' };
+    }
+
+    // Password-fallback devices have no passkey to re-verify with, and are
+    // deliberately excluded from this re-sync (see the config docblock).
+    if (localStorage.getItem('auth_method') === 'password' || !Passkeys.isSupported()) {
+        return { redirect: '/' };
+    }
+
+    try {
+        const result = await Passkeys.verify();
+
+        if (result.device_uuid) {
+            localStorage.setItem('device_uuid', result.device_uuid);
+        }
+
+        return { redirect: result.redirect ?? '/' };
+    } catch (error) {
+        console.error(error);
+
+        return { redirect: '/' };
+    }
+}
+
+/**
  * Returns this device's locally-stored sign-in identifiers. Read-only,
  * performs no DOM access; callers decide how/where to display them.
  */
@@ -437,5 +473,11 @@ export function initEasyAuth({ onStatus } = {}) {
 
     if (document.getElementById('account-deleted-page')) {
         clearDeviceCredentials();
+    }
+
+    if (document.getElementById('pwa-resync-page')) {
+        attemptPwaResync().then(({ redirect }) => {
+            window.location.href = redirect;
+        });
     }
 }
